@@ -18,6 +18,4 @@ export interface IUserMethods {
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
-export interface IUserVirtuals {}
-
 export type UserModel = Model<IUser, unknown, IUserMethods>;

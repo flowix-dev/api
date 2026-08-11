@@ -10,9 +10,3 @@ export interface IWorkflow {
   createdAt: Date;
   updatedAt: Date;
 }
-
-export interface IWorkflowMethods {}
-
-export interface IWorkflowVirtuals {}
-
-export type WorkflowDocument = IWorkflow & IWorkflowMethods & IWorkflowVirtuals;

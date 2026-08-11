@@ -10,11 +10,3 @@ export interface INodeDefinition {
   createdAt: Date;
   updatedAt: Date;
 }
-
-export interface INodeDefinitionMethods {}
-
-export interface INodeDefinitionVirtuals {}
-
-export type NodeDefinitionDocument = INodeDefinition &
-  INodeDefinitionMethods &
-  INodeDefinitionVirtuals;

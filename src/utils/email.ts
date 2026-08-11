@@ -21,10 +21,10 @@ export async function sendPasswordResetEmail({
   resetToken,
   firstName,
 }: SendPasswordResetEmailParams): Promise<void> {
-  const resetUrl = `${process.env.FRONTEND_URL || "http://localhost:5173"}/reset-password?token=${resetToken}`;
+  const resetUrl = `${process.env.FRONTEND_URL || "http://localhost:3000"}/reset-password?token=${resetToken}`;
 
   await transporter.sendMail({
-    from: `"AI Workflows" <${process.env.SMTP_FROM || "noreply@aiworkflows.com"}>`,
+    from: `"Flowix" <${process.env.SMTP_FROM || "noreply@flowix.com"}>`,
     to,
     subject: "Password Reset Request",
     html: `
@@ -41,7 +41,7 @@ export async function sendPasswordResetEmail({
         </p>
         <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />
         <p style="color: #9ca3af; font-size: 12px;">
-          AI Workflows — ${new Date().getFullYear()}
+          Flowix — ${new Date().getFullYear()}
         </p>
       </div>
     `,

@@ -1,6 +1,7 @@
 import { Schema } from "mongoose";
+import { IWorkflowEdge } from "../interfaces/WorkflowEdge";
 
-export const WorkflowEdgeSchema = new Schema(
+export const WorkflowEdgeSchema = new Schema<IWorkflowEdge>(
   {
     sourceNodeId: {
       type: Number,

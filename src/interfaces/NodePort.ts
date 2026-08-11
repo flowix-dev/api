@@ -7,9 +7,3 @@ export interface INodePort {
   defaultValue?: unknown;
   description?: string;
 }
-
-export interface INodePortMethods {}
-
-export interface INodePortVirtuals {}
-
-export type NodePortDocument = INodePort & INodePortMethods & INodePortVirtuals;

@@ -1,6 +1,7 @@
 import { Schema, Types } from "mongoose";
+import { IWorkflowNode } from "../interfaces/WorkflowNode";
 
-export const WorkflowNodeSchema = new Schema(
+export const WorkflowNodeSchema = new Schema<IWorkflowNode>(
   {
     id: {
       type: Number,
@@ -36,7 +37,7 @@ export const WorkflowNodeSchema = new Schema(
       type: Number,
       required: [true, "Height is required"],
     },
-    userInputs: {
+    inputs: {
       type: Schema.Types.Mixed,
       default: {},
     },

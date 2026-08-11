@@ -1,23 +1,23 @@
 import { Request, Response, NextFunction } from "express";
 import { verifyAccessToken, TokenPayload } from "../utils/jwt";
 
-declare global {
-  namespace Express {
-    interface Request {
-      user?: TokenPayload;
-    }
+declare module "express" {
+  interface Request {
+    user?: TokenPayload;
   }
 }
 
 export function authenticate(req: Request, res: Response, next: NextFunction): void {
-  const authHeader = req.headers.authorization;
+  const token =
+    req.cookies?.accessToken ||
+    (req.headers.authorization?.startsWith("Bearer ")
+      ? req.headers.authorization.split(" ")[1]
+      : null);
 
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+  if (!token) {
     res.status(401).json({ message: "Authorization token is required" });
     return;
   }
-
-  const token = authHeader.split(" ")[1];
 
   try {
     const payload = verifyAccessToken(token);

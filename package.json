@@ -1,5 +1,5 @@
 {
-  "name": "ai-workflows",
+  "name": "flowix",
   "version": "1.0.0",
   "description": "Workflow Engine - MongoDB Models",
   "main": "dist/index.js",
@@ -9,19 +9,30 @@
     "clean": "tsc --build --clean",
     "lint": "eslint src/ --ext .ts",
     "format": "prettier --write \"src/**/*.ts\"",
-    "format:check": "prettier --check \"src/**/*.ts\""
+    "format:check": "prettier --check \"src/**/*.ts\"",
+    "seed": "npx tsx src/seed.ts",
+    "create-admin": "npx tsx src/create-admin.ts",
+    "clear-db": "npx tsx src/clear-db.ts",
+    "dev": "npx tsx watch src/index.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1095.0",
+    "@aws-sdk/client-sqs": "^3.1095.0",
     "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
+    "dotenv": "^17.0.6",
     "express": "^5.2.1",
+    "ioredis": "^5.11.1",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.7.2",
-    "nodemailer": "^9.0.3"
+    "nodemailer": "^9.0.3",
+    "openai": "^7.2.0",
+    "readline-sync": "^1.4.10",
+    "socket.io": "^4.8.3"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -32,11 +43,13 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^26.0.1",
     "@types/nodemailer": "^8.0.1",
+    "@types/readline-sync": "^1.4.8",
     "@typescript-eslint/eslint-plugin": "^8.64.0",
     "@typescript-eslint/parser": "^8.64.0",
     "eslint": "^10.7.0",
     "eslint-config-prettier": "^10.1.8",
     "prettier": "^3.9.5",
+    "tsx": "^4.23.1",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.64.0"
   }

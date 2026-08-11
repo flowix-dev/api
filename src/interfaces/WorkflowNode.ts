@@ -9,11 +9,5 @@ export interface IWorkflowNode {
   y: number;
   w: number;
   h: number;
-  userInputs: Record<string, unknown>;
+  inputs: Record<string, unknown>;
 }
-
-export interface IWorkflowNodeMethods {}
-
-export interface IWorkflowNodeVirtuals {}
-
-export type WorkflowNodeDocument = IWorkflowNode & IWorkflowNodeMethods & IWorkflowNodeVirtuals;

@@ -1,9 +1,9 @@
 import { model, Schema, Types } from "mongoose";
-import { IWorkflow, WorkflowDocument } from "../interfaces/Workflow";
+import { IWorkflow } from "../interfaces/Workflow";
 import { WorkflowNodeSchema } from "./WorkflowNodeSchema";
 import { WorkflowEdgeSchema } from "./WorkflowEdgeSchema";
 
-const workflowSchema = new Schema<WorkflowDocument>(
+export const workflowSchema = new Schema<IWorkflow>(
   {
     name: {
       type: String,
@@ -30,4 +30,4 @@ const workflowSchema = new Schema<WorkflowDocument>(
   }
 );
 
-export const Workflow = model<WorkflowDocument>("Workflow", workflowSchema);
+export const Workflow = model<IWorkflow>("Workflow", workflowSchema);

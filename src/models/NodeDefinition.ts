@@ -1,8 +1,8 @@
 import { model, Schema } from "mongoose";
-import { NodeDefinitionDocument } from "../interfaces/NodeDefinition";
+import { INodeDefinition } from "../interfaces/NodeDefinition";
 import { NodePortSchema } from "./NodePortSchema";
 
-const nodeDefinitionSchema = new Schema<NodeDefinitionDocument>(
+const nodeDefinitionSchema = new Schema<INodeDefinition>(
   {
     name: {
       type: String,
@@ -38,4 +38,4 @@ const nodeDefinitionSchema = new Schema<NodeDefinitionDocument>(
   }
 );
 
-export const NodeDefinition = model<NodeDefinitionDocument>("NodeDefinition", nodeDefinitionSchema);
+export const NodeDefinition = model<INodeDefinition>("NodeDefinition", nodeDefinitionSchema);

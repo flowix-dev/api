@@ -4,9 +4,3 @@ export interface IWorkflowEdge {
   targetNodeId: number;
   targetKey: string;
 }
-
-export interface IWorkflowEdgeMethods {}
-
-export interface IWorkflowEdgeVirtuals {}
-
-export type WorkflowEdgeDocument = IWorkflowEdge & IWorkflowEdgeMethods & IWorkflowEdgeVirtuals;

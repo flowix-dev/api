@@ -1,7 +1,8 @@
 import { Schema } from "mongoose";
 import { NodeDataType } from "../types/NodeDataType";
+import { INodePort } from "../interfaces/NodePort";
 
-export const NodePortSchema = new Schema(
+export const NodePortSchema = new Schema<INodePort>(
   {
     key: {
       type: String,

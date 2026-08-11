@@ -4,6 +4,29 @@ import { User } from "../models/User";
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from "../utils/jwt";
 import { sendPasswordResetEmail } from "../utils/email";
 
+const isProd = process.env.NODE_ENV === "production";
+const COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: isProd,
+  sameSite: "strict" as const,
+};
+
+function setAuthCookies(res: Response, accessToken: string, refreshToken: string): void {
+  res.cookie("accessToken", accessToken, {
+    ...COOKIE_OPTIONS,
+    maxAge: 15 * 60 * 1000,
+  });
+  res.cookie("refreshToken", refreshToken, {
+    ...COOKIE_OPTIONS,
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  });
+}
+
+function clearAuthCookies(res: Response): void {
+  res.clearCookie("accessToken", COOKIE_OPTIONS);
+  res.clearCookie("refreshToken", COOKIE_OPTIONS);
+}
+
 export async function register(req: Request, res: Response): Promise<void> {
   try {
     const { firstName, lastName, email, password } = req.body;
@@ -19,12 +42,7 @@ export async function register(req: Request, res: Response): Promise<void> {
     const accessToken = signAccessToken(user._id);
     const refreshToken = signRefreshToken(user._id);
 
-    res.cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    setAuthCookies(res, accessToken, refreshToken);
 
     res.status(201).json({
       message: "User registered successfully",
@@ -36,7 +54,6 @@ export async function register(req: Request, res: Response): Promise<void> {
         role: user.role,
         credits: user.credits,
       },
-      accessToken,
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Registration failed";
@@ -63,12 +80,7 @@ export async function login(req: Request, res: Response): Promise<void> {
     const accessToken = signAccessToken(user._id);
     const refreshToken = signRefreshToken(user._id);
 
-    res.cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    setAuthCookies(res, accessToken, refreshToken);
 
     res.json({
       message: "Login successful",
@@ -80,7 +92,6 @@ export async function login(req: Request, res: Response): Promise<void> {
         role: user.role,
         credits: user.credits,
       },
-      accessToken,
     });
   } catch {
     res.status(500).json({ message: "Login failed" });
@@ -88,11 +99,7 @@ export async function login(req: Request, res: Response): Promise<void> {
 }
 
 export async function logout(_req: Request, res: Response): Promise<void> {
-  res.clearCookie("refreshToken", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
-  });
+  clearAuthCookies(res);
   res.json({ message: "Logged out successfully" });
 }
 
@@ -127,14 +134,9 @@ export async function refresh(req: Request, res: Response): Promise<void> {
     const accessToken = signAccessToken(user._id);
     const refreshToken = signRefreshToken(user._id);
 
-    res.cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    setAuthCookies(res, accessToken, refreshToken);
 
-    res.json({ accessToken });
+    res.json({ message: "Session refreshed" });
   } catch {
     res.status(401).json({ message: "Invalid or expired refresh token" });
   }

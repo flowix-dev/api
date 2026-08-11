@@ -1,0 +1,32 @@
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: flowix-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+
+  redis:
+    image: redis:7.2
+    container_name: flowix-redis
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+
+  localstack:
+    image: localstack/localstack:2.0
+    container_name: flowix-localstack
+    ports:
+      - "4566:4566"
+      - "4571:4571"
+    environment:
+      SERVICES: s3,sqs
+      DEFAULT_REGION: us-east-1
+      DATA_DIR: /tmp/localstack/data
+    volumes:
+      - localstack_data:/tmp/localstack
+
+volumes:
+  mongodb_data:
+  localstack_data:
