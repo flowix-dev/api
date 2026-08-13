@@ -38,10 +38,9 @@ const userSchema = new Schema<IUser, UserModelType>(
       },
       default: UserRole.USER,
     },
-    credits: {
-      type: Number,
-      default: 500,
-      min: [0, "Credits cannot be negative"],
+    puterToken: {
+      type: String,
+      default: null,
     },
     passwordResetToken: {
       type: String,

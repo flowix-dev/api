@@ -1,9 +1,21 @@
+export interface UploadedFile {
+  buffer: Buffer;
+  originalname: string;
+  mimetype: string;
+  size: number;
+}
+
 export class ExecutionContext {
   readonly outputs: Map<number, Record<string, unknown>> = new Map();
   readonly executed: Set<number> = new Set();
   readonly running: Set<number> = new Set();
   readonly failed: Set<number> = new Set();
   readonly skipped: Set<number> = new Set();
+
+  workflowId = "";
+  uploadedFile: UploadedFile | null = null;
+  puterToken: string | null = null;
+  readonly uploadedFiles: Map<number, UploadedFile> = new Map();
 
   setOutput(nodeId: number, output: Record<string, unknown>): void {
     this.outputs.set(nodeId, output);

@@ -52,7 +52,6 @@ export async function register(req: Request, res: Response): Promise<void> {
         lastName: user.lastName,
         email: user.email,
         role: user.role,
-        credits: user.credits,
       },
     });
   } catch (error: unknown) {
@@ -90,7 +89,6 @@ export async function login(req: Request, res: Response): Promise<void> {
         lastName: user.lastName,
         email: user.email,
         role: user.role,
-        credits: user.credits,
       },
     });
   } catch {
@@ -105,7 +103,7 @@ export async function logout(_req: Request, res: Response): Promise<void> {
 
 export async function me(req: Request, res: Response): Promise<void> {
   try {
-    const user = await User.findById(req.user!.userId).select("-password");
+    const user = await User.findById(req.user!.userId).select("-password -puterToken");
     if (!user) {
       res.status(404).json({ message: "User not found" });
       return;

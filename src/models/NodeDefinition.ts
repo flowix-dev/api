@@ -24,6 +24,10 @@ const nodeDefinitionSchema = new Schema<INodeDefinition>(
       default: 1,
       min: [1, "Version must be at least 1"],
     },
+    isTool: {
+      type: Boolean,
+      default: false,
+    },
     inputs: {
       type: [NodePortSchema],
       default: [],

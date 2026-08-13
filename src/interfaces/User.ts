@@ -7,7 +7,7 @@ export interface IUser {
   email: string;
   password: string;
   role: UserRole;
-  credits: number;
+  puterToken?: string | null;
   passwordResetToken?: string | null;
   passwordResetExpires?: Date | null;
   createdAt: Date;

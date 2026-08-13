@@ -1,4 +1,5 @@
 import { Router } from "express";
+import multer from "multer";
 import { authenticate } from "../middleware/auth";
 import {
   createWorkflow,
@@ -7,12 +8,19 @@ import {
   listWorkflows,
   updateWorkflow,
   runWorkflow,
+  downloadFile,
   getWorkflowExecutions,
 } from "../controllers/workflow.controller";
 
 const router = Router();
 
-router.post("/:workflowId/run", authenticate, runWorkflow);
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 25 * 1024 * 1024 },
+});
+
+router.post("/:workflowId/run", authenticate, upload.single("file"), runWorkflow);
+router.get("/files/*key", authenticate, downloadFile);
 router.get("/:workflowId/executions", authenticate, getWorkflowExecutions);
 router.get("/", authenticate, listWorkflows);
 router.get("/:workflowId", authenticate, getWorkflow);

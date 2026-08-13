@@ -11,6 +11,7 @@ const seedNodeDefinitions = [
     fnKey: "noop",
     category: "utility",
     version: 1,
+    isTool: false,
     inputs: [],
     outputs: [{ key: "result", type: NodeDataType.STRING, description: "Execution confirmation" }],
   },
@@ -19,6 +20,7 @@ const seedNodeDefinitions = [
     fnKey: "delay",
     category: "utility",
     version: 1,
+    isTool: true,
     inputs: [
       {
         key: "delay",
@@ -38,6 +40,7 @@ const seedNodeDefinitions = [
     fnKey: "sum",
     category: "math",
     version: 1,
+    isTool: true,
     inputs: [
       {
         key: "a",
@@ -61,6 +64,7 @@ const seedNodeDefinitions = [
     fnKey: "http.request",
     category: "actions",
     version: 1,
+    isTool: true,
     inputs: [
       { key: "url", type: NodeDataType.STRING, required: true, description: "Request URL" },
       {
@@ -89,6 +93,7 @@ const seedNodeDefinitions = [
     fnKey: "openai.chat",
     category: "ai",
     version: 1,
+    isTool: false,
     inputs: [
       {
         key: "model",
@@ -133,6 +138,7 @@ const seedNodeDefinitions = [
     fnKey: "email.send",
     category: "actions",
     version: 1,
+    isTool: true,
     inputs: [
       { key: "to", type: NodeDataType.STRING, required: true, description: "Recipient email" },
       { key: "subject", type: NodeDataType.STRING, required: true, description: "Email subject" },
@@ -150,82 +156,45 @@ const seedNodeDefinitions = [
     ],
   },
   {
-    name: "S3 Storage",
-    fnKey: "s3.storage",
-    category: "storage",
+    name: "File Upload",
+    fnKey: "file.upload",
+    category: "files",
     version: 1,
+    isTool: false,
     inputs: [
       {
-        key: "action",
-        type: NodeDataType.STRING,
+        key: "file",
+        type: NodeDataType.FILE,
         required: true,
-        defaultValue: "list",
-        description: "Action: list, get, put",
-      },
-      { key: "bucket", type: NodeDataType.STRING, required: true, description: "S3 bucket name" },
-      {
-        key: "key",
-        type: NodeDataType.STRING,
-        required: false,
-        description: "Object key (required for get/put)",
-      },
-      {
-        key: "content",
-        type: NodeDataType.STRING,
-        required: false,
-        description: "File content (required for put)",
+        description: "Archivo a subir (se elige al ejecutar)",
       },
     ],
     outputs: [
-      { key: "keys", type: NodeDataType.ARRAY, description: "List of object keys (list action)" },
-      { key: "content", type: NodeDataType.STRING, description: "Object content (get action)" },
-      { key: "etag", type: NodeDataType.STRING, description: "ETag of the object" },
+      { key: "url", type: NodeDataType.STRING, description: "URL del archivo subido" },
+      { key: "key", type: NodeDataType.STRING, description: "Clave S3 del archivo" },
+      { key: "name", type: NodeDataType.STRING, description: "Nombre original del archivo" },
+      { key: "size", type: NodeDataType.NUMBER, description: "Tamaño en bytes" },
+      { key: "type", type: NodeDataType.STRING, description: "Tipo MIME" },
     ],
   },
   {
-    name: "SQS Message",
-    fnKey: "sqs.message",
-    category: "messaging",
+    name: "File Parser",
+    fnKey: "file.parser",
+    category: "files",
     version: 1,
+    isTool: false,
     inputs: [
       {
-        key: "action",
+        key: "url",
         type: NodeDataType.STRING,
         required: true,
-        defaultValue: "send",
-        description: "Action: send, receive, create-queue",
-      },
-      {
-        key: "queueUrl",
-        type: NodeDataType.STRING,
-        required: false,
-        description: "Queue URL (required for send/receive)",
-      },
-      {
-        key: "queueName",
-        type: NodeDataType.STRING,
-        required: false,
-        description: "Queue name (required for create-queue)",
-      },
-      {
-        key: "messageBody",
-        type: NodeDataType.STRING,
-        required: false,
-        description: "Message body (required for send)",
+        description: "URL del archivo (salida de File Upload)",
       },
     ],
     outputs: [
-      { key: "messageId", type: NodeDataType.STRING, description: "Message ID (send action)" },
-      {
-        key: "messages",
-        type: NodeDataType.ARRAY,
-        description: "Received messages (receive action)",
-      },
-      {
-        key: "queueUrl",
-        type: NodeDataType.STRING,
-        description: "Created queue URL (create-queue action)",
-      },
+      { key: "text", type: NodeDataType.STRING, description: "Contenido extraído" },
+      { key: "format", type: NodeDataType.STRING, description: "Formato detectado" },
+      { key: "rows", type: NodeDataType.ARRAY, description: "Filas parseadas (csv/xlsx)" },
     ],
   },
 ];
@@ -236,13 +205,22 @@ async function seed(): Promise<void> {
     console.log("Connected to MongoDB");
 
     for (const def of seedNodeDefinitions) {
-      const existing = await NodeDefinition.findOne({ fnKey: def.fnKey });
-      if (existing) {
-        console.log(`  Skipping "${def.name}" (fnKey: ${def.fnKey}) — already exists`);
-      } else {
-        await NodeDefinition.create(def);
-        console.log(`  Created "${def.name}" (fnKey: ${def.fnKey})`);
-      }
+      const updated = await NodeDefinition.findOneAndUpdate(
+        { fnKey: def.fnKey },
+        { $set: def },
+        { upsert: true, returnDocument: "after", setDefaultsOnInsert: true }
+      );
+      console.log(
+        `  Upserted "${updated.name}" (fnKey: ${updated.fnKey}, isTool: ${updated.isTool})`
+      );
+    }
+
+    const seedFnKeys = seedNodeDefinitions.map((def) => def.fnKey);
+    const removed = await NodeDefinition.deleteMany({
+      fnKey: { $nin: seedFnKeys },
+    });
+    if (removed.deletedCount > 0) {
+      console.log(`  Removed ${removed.deletedCount} obsolete definitions`);
     }
 
     console.log("\nSeed completed successfully");

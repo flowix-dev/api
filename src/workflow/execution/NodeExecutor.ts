@@ -54,7 +54,7 @@ export class NodeExecutor {
       nodeExecution.inputData = resolvedInputs;
 
       const executor = await executorRegistry.getExecutorForNode(node);
-      const result = await executor.execute(node, resolvedInputs);
+      const result = await executor.execute(node, resolvedInputs, context);
 
       context.setOutput(node.id, result.outputs);
       nodeExecution.outputData = result.outputs;

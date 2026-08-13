@@ -9,10 +9,16 @@ import usersRoutes from "./routes/users.routes";
 import workflowRoutes from "./routes/workflow.routes";
 import executionRoutes from "./routes/execution.routes";
 import nodeDefinitionsRoutes from "./routes/node-definitions.routes";
+import chatRoutes from "./routes/chat.routes";
+import modelRoutes from "./routes/model.routes";
 import "./workflow/executors/index";
 import { connectRedis, disconnectRedis, redisHealth } from "./utils/redis";
 import { createSocketServer, wireWorkflowEvents } from "./socket";
 import { workflowService } from "./services/workflow.service";
+
+process.on("uncaughtException", (error) => {
+  console.error("[process] Uncaught exception (non-fatal):", error);
+});
 
 const app = express();
 const server = http.createServer(app);
@@ -31,6 +37,8 @@ api.use("/users", usersRoutes);
 api.use("/workflows", workflowRoutes);
 api.use("/node-definitions", nodeDefinitionsRoutes);
 api.use("/executions", executionRoutes);
+api.use("/chats", chatRoutes);
+api.use("/models", modelRoutes);
 
 app.get("/health", async (_req, res) => {
   const redisStatus = await redisHealth();

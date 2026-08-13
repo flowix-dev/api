@@ -1,12 +1,17 @@
 import { IWorkflowNode } from "../../interfaces/WorkflowNode";
 import { NodeDefinition } from "../../models/NodeDefinition";
+import { ExecutionContext } from "../execution/ExecutionContext";
 
 export interface ExecutorResult {
   outputs: Record<string, unknown>;
 }
 
 export interface INodeExecutor {
-  execute(node: IWorkflowNode, inputs: Record<string, unknown>): Promise<ExecutorResult>;
+  execute(
+    node: IWorkflowNode,
+    inputs: Record<string, unknown>,
+    context?: ExecutionContext
+  ): Promise<ExecutorResult>;
 }
 
 type ExecutorFactory = () => INodeExecutor;

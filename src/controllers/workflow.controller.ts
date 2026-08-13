@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { workflowService } from "../services/workflow.service";
 import { IWorkflowNode } from "../interfaces/WorkflowNode";
 import { IWorkflowEdge } from "../interfaces/WorkflowEdge";
+import { getWorkflowFileByKey } from "../utils/fileStorage";
 
 export async function listWorkflows(req: Request, res: Response): Promise<void> {
   try {
@@ -85,7 +86,19 @@ export async function runWorkflow(req: Request, res: Response): Promise<void> {
     const workflowId = req.params.workflowId as string;
     const userId = req.user!.userId;
 
-    const execution = await workflowService.runWorkflow(workflowId, userId);
+    const file = req.file;
+    const execution = await workflowService.runWorkflow(
+      workflowId,
+      userId,
+      file
+        ? {
+            buffer: file.buffer,
+            originalname: file.originalname,
+            mimetype: file.mimetype,
+            size: file.size,
+          }
+        : undefined
+    );
 
     res.status(202).json({
       message: "Workflow execution started",
@@ -98,6 +111,25 @@ export async function runWorkflow(req: Request, res: Response): Promise<void> {
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Failed to run workflow";
     res.status(400).json({ message });
+  }
+}
+
+export async function downloadFile(req: Request, res: Response): Promise<void> {
+  try {
+    const raw = req.params.key;
+    const key = (Array.isArray(raw) ? raw.join("/") : raw).replace(/^\/+/, "");
+    const file = await getWorkflowFileByKey(key);
+
+    if (file.contentType) {
+      res.setHeader("Content-Type", file.contentType);
+    }
+    if (file.name) {
+      res.setHeader("Content-Disposition", `inline; filename="${file.name.replace(/["\\]/g, "")}"`);
+    }
+    res.send(file.body);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Failed to download file";
+    res.status(404).json({ message });
   }
 }
 

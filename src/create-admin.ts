@@ -94,7 +94,6 @@ async function createAdmin(): Promise<void> {
       email: input.email,
       password: input.password,
       role: UserRole.ADMIN,
-      credits: 1000,
     });
 
     console.log(`\nAdmin user created successfully:`);
@@ -102,7 +101,6 @@ async function createAdmin(): Promise<void> {
     console.log(`  Name:      ${user.firstName} ${user.lastName}`);
     console.log(`  Email:     ${user.email}`);
     console.log(`  Role:      ${user.role}`);
-    console.log(`  Credits:   ${user.credits}`);
   } catch (error) {
     console.error("Failed to create admin user:", error instanceof Error ? error.message : error);
     process.exit(1);

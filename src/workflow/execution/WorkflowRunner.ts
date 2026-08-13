@@ -2,7 +2,7 @@ import { IWorkflow } from "../../interfaces/Workflow";
 import { INodeExecution, IWorkflowExecution } from "../../interfaces/WorkflowExecution";
 import { WorkflowExecution } from "../../models/WorkflowExecution";
 import { Workflow } from "../../models/Workflow";
-import { ExecutionContext } from "./ExecutionContext";
+import { ExecutionContext, UploadedFile } from "./ExecutionContext";
 import { DependencyGraph } from "./DependencyGraph";
 import { NodeExecutor } from "./NodeExecutor";
 import { InputResolver } from "./InputResolver";
@@ -10,10 +10,14 @@ import { WorkflowEventEmitter, IWorkflowEventEmitter } from "./WorkflowEventEmit
 
 export interface RunOptions {
   maxConcurrentNodes?: number;
+  uploadedFile?: UploadedFile | null;
+  puterToken?: string | null;
 }
 
 const DEFAULT_OPTIONS: Required<RunOptions> = {
   maxConcurrentNodes: 10,
+  uploadedFile: null,
+  puterToken: null,
 };
 
 export class WorkflowRunner {
@@ -73,6 +77,9 @@ export class WorkflowRunner {
   ): Promise<void> {
     const executionId = execution._id.toString();
     const context = new ExecutionContext();
+    context.workflowId = execution.workflowId.toString();
+    context.uploadedFile = opts.uploadedFile ?? null;
+    context.puterToken = opts.puterToken ?? null;
     const graph = new DependencyGraph(workflow.nodes, workflow.edges);
     const nodeExecutions: INodeExecution[] = [];
     const semaphore = createSemaphore(opts.maxConcurrentNodes);

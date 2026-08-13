@@ -1,6 +1,8 @@
 import { Workflow } from "../models/Workflow";
 import { WorkflowExecution } from "../models/WorkflowExecution";
+import { User } from "../models/User";
 import { WorkflowRunner } from "../workflow/execution/WorkflowRunner";
+import { UploadedFile } from "../workflow/execution/ExecutionContext";
 import { validateWorkflowGraph } from "../workflow/workflow.validation";
 import { IWorkflowNode } from "../interfaces/WorkflowNode";
 import { IWorkflowEdge } from "../interfaces/WorkflowEdge";
@@ -12,7 +14,7 @@ export class WorkflowService {
     return this.runner.events;
   }
 
-  async runWorkflow(workflowId: string, userId: string) {
+  async runWorkflow(workflowId: string, userId: string, uploadedFile?: UploadedFile) {
     const workflow = await Workflow.findById(workflowId);
     if (!workflow) {
       throw new Error("Workflow not found");
@@ -23,7 +25,11 @@ export class WorkflowService {
       throw new Error(`Workflow validation failed: ${errors.map((e) => e.message).join(", ")}`);
     }
 
-    const execution = await this.runner.runWorkflow(workflowId, userId);
+    const user = await User.findById(userId).select("puterToken").lean();
+    const execution = await this.runner.runWorkflow(workflowId, userId, {
+      uploadedFile,
+      puterToken: user?.puterToken ?? undefined,
+    });
 
     return execution;
   }
