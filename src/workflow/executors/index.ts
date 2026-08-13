@@ -4,7 +4,11 @@ import { DelayExecutor } from "./delay.executor";
 import { SumExecutor } from "./sum.executor";
 import { HttpRequestExecutor } from "./http-request.executor";
 import { OpenAIChatExecutor } from "./openai-chat.executor";
-import { EmailSendExecutor } from "./email-send.executor";
+import { GmailSendExecutor } from "./gmail-send.executor";
+import { OutlookSendExecutor } from "./outlook-send.executor";
+import { StringifyExecutor } from "./stringify.executor";
+import { ParseExecutor } from "./parse.executor";
+import { GetValueExecutor } from "./get-value.executor";
 import { FileUploadExecutor } from "./file-upload.executor";
 import { FileParserExecutor } from "./file-parser.executor";
 
@@ -13,7 +17,11 @@ executorRegistry.register("delay", () => new DelayExecutor());
 executorRegistry.register("sum", () => new SumExecutor());
 executorRegistry.register("http.request", () => new HttpRequestExecutor());
 executorRegistry.register("openai.chat", () => new OpenAIChatExecutor());
-executorRegistry.register("email.send", () => new EmailSendExecutor());
+executorRegistry.register("gmail.send", () => new GmailSendExecutor());
+executorRegistry.register("outlook.send", () => new OutlookSendExecutor());
+executorRegistry.register("json.stringify", () => new StringifyExecutor());
+executorRegistry.register("json.parse", () => new ParseExecutor());
+executorRegistry.register("json.get", () => new GetValueExecutor());
 executorRegistry.register("file.upload", () => new FileUploadExecutor());
 executorRegistry.register("file.parser", () => new FileParserExecutor());
 
@@ -24,7 +32,11 @@ export {
   SumExecutor,
   HttpRequestExecutor,
   OpenAIChatExecutor,
-  EmailSendExecutor,
+  GmailSendExecutor,
+  OutlookSendExecutor,
+  StringifyExecutor,
+  ParseExecutor,
+  GetValueExecutor,
   FileUploadExecutor,
   FileParserExecutor,
 };

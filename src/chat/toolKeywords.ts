@@ -1,5 +1,4 @@
 export const TOOL_KEYWORDS: Record<string, string[]> = {
-  "email.send": ["email", "e-mail", "correo", "send an email", "enviar un correo"],
   delay: ["delay", "wait", "espera", "demora", "pausa", "sleep"],
 };
 
@@ -53,10 +52,6 @@ export function inferToolInputs(fnKey: string, message: string): Record<string, 
   if (fnKey === "http.request") {
     const url = message.match(/https?:\/\/[^\s]+/)?.[0] ?? "";
     return { url, method: "GET" };
-  }
-  if (fnKey === "email.send") {
-    const email = message.match(/[\w.+-]+@[\w-]+\.[\w.]+/)?.[0] ?? "";
-    return { to: email, subject: "Flowpath Assistant", body: message };
   }
   return {};
 }

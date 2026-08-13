@@ -13,6 +13,7 @@ export class ExecutionContext {
   readonly skipped: Set<number> = new Set();
 
   workflowId = "";
+  userId = "";
   uploadedFile: UploadedFile | null = null;
   puterToken: string | null = null;
   readonly uploadedFiles: Map<number, UploadedFile> = new Map();

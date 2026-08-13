@@ -20,6 +20,12 @@ const chatSchema = new Schema<IChat>(
       required: [true, "Chat model is required"],
       trim: true,
     },
+    assistantId: {
+      type: Schema.Types.ObjectId,
+      ref: "Assistant",
+      default: null,
+      index: true,
+    },
   },
   { timestamps: true }
 );

@@ -1,7 +1,6 @@
 import { IToolCall } from "../interfaces/ChatMessage";
 
 const TOOL_LABELS: Record<string, string> = {
-  "email.send": "correo electrónico",
   "http.request": "petición HTTP",
   sum: "suma",
   delay: "retraso",

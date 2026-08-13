@@ -8,5 +8,6 @@ export enum NodeDataType {
   IMAGE = "image",
   FILE = "file",
   AUDIO = "audio",
+  CREDENTIALS = "credentials",
   ANY = "any",
 }

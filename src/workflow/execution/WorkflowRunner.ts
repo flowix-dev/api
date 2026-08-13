@@ -103,6 +103,7 @@ export class WorkflowRunner {
     const executionId = execution._id.toString();
     const context = new ExecutionContext();
     context.workflowId = execution.workflowId.toString();
+    context.userId = execution.triggeredBy.toString();
     context.uploadedFile = opts.uploadedFile ?? null;
     context.puterToken = opts.puterToken ?? null;
     const graph = new DependencyGraph(workflow.nodes, workflow.edges);

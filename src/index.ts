@@ -11,6 +11,8 @@ import executionRoutes from "./routes/execution.routes";
 import nodeDefinitionsRoutes from "./routes/node-definitions.routes";
 import chatRoutes from "./routes/chat.routes";
 import modelRoutes from "./routes/model.routes";
+import assistantRoutes from "./routes/assistant.routes";
+import credentialRoutes from "./routes/credential.routes";
 import "./workflow/executors/index";
 import { connectRedis, disconnectRedis, redisHealth } from "./utils/redis";
 import { createSocketServer, wireWorkflowEvents } from "./socket";
@@ -39,6 +41,8 @@ api.use("/node-definitions", nodeDefinitionsRoutes);
 api.use("/executions", executionRoutes);
 api.use("/chats", chatRoutes);
 api.use("/models", modelRoutes);
+api.use("/assistants", assistantRoutes);
+api.use("/credentials", credentialRoutes);
 
 app.get("/health", async (_req, res) => {
   const redisStatus = await redisHealth();

@@ -4,10 +4,13 @@ import { IChat } from "../interfaces/Chat";
 import { IChatFile } from "../interfaces/ChatFile";
 import { IChatMessage, IAttachment, IToolCall } from "../interfaces/ChatMessage";
 import { INodeDefinition } from "../interfaces/NodeDefinition";
+import { IAssistant } from "../interfaces/Assistant";
 import { IWorkflowNode } from "../interfaces/WorkflowNode";
 import { Chat } from "../models/Chat";
 import { ChatFile } from "../models/ChatFile";
 import { ChatMessage } from "../models/ChatMessage";
+import { Assistant } from "../models/Assistant";
+import { assistantService } from "./assistant.service";
 import { NodeDefinition } from "../models/NodeDefinition";
 import { executorRegistry } from "../workflow/executors";
 import type {
@@ -67,14 +70,31 @@ export class ChatService {
     return Chat.find({ authorId: userId }).sort({ updatedAt: -1 }).lean();
   }
 
-  async createChat(userId: string, input: { title?: string; model?: string }): Promise<IChat> {
-    const modelInfo = getModelInfo(input.model ?? "") ?? getModelInfo(DEFAULT_MODEL_ID);
-    const title = input.title?.trim() || `Chat ${modelInfo!.name}`;
+  async createChat(
+    userId: string,
+    input: { title?: string; model?: string; assistantId?: string }
+  ): Promise<IChat> {
+    let modelId = input.model ?? "";
+    let title = input.title?.trim() ?? "";
 
+    if (input.assistantId) {
+      const assistant = await Assistant.findOne({
+        _id: input.assistantId,
+        authorId: userId,
+      }).lean();
+      if (!assistant) {
+        throw new Error("Assistant not found");
+      }
+      modelId = assistant.model;
+      title = title || assistant.name;
+    }
+
+    const modelInfo = getModelInfo(modelId) ?? getModelInfo(DEFAULT_MODEL_ID);
     return Chat.create({
       authorId: userId,
-      title,
+      title: title || `Chat ${modelInfo!.name}`,
       model: modelInfo!.id,
+      assistantId: input.assistantId ?? null,
     });
   }
 
@@ -186,7 +206,20 @@ export class ChatService {
     if (!chat) {
       throw new Error("Chat not found");
     }
-    const modelInfo = getModelInfo(chat.model) ?? getModelInfo(DEFAULT_MODEL_ID)!;
+
+    let assistant: IAssistant | null = null;
+    if (chat.assistantId) {
+      assistant = await Assistant.findOne({
+        _id: chat.assistantId,
+        authorId: userId,
+      }).lean();
+      if (!assistant) {
+        throw new Error("Assistant not found");
+      }
+    }
+
+    const modelInfo =
+      getModelInfo(assistant?.model ?? chat.model) ?? getModelInfo(DEFAULT_MODEL_ID)!;
 
     const user = await User.findById(userId).select("puterToken").lean();
     const puterToken = user?.puterToken ?? null;
@@ -214,15 +247,31 @@ export class ChatService {
     });
     sink.onUserMessage?.(userMessage);
 
-    const toolDefinitions = await NodeDefinition.find({ isTool: true }).sort({
-      category: 1,
-      name: 1,
-    });
-    const tools: ConverseTool[] = toolDefinitions.map(buildConverseTool);
+    let toolDefinitions: INodeDefinition[] = [];
+    let tools: ConverseTool[] = [];
+    let system: string;
+
+    if (assistant) {
+      const context = await assistantService.retrieveContext(
+        assistant._id.toString(),
+        userId,
+        input.content
+      );
+      const contextBlock = context
+        ? `\n\nContexto de los archivos del asistente (fragmentos en orden de documento):\n${context}`
+        : "";
+      system = `${assistant.systemPrompt}${contextBlock}`;
+    } else {
+      toolDefinitions = await NodeDefinition.find({ isTool: true }).sort({
+        category: 1,
+        name: 1,
+      });
+      tools = toolDefinitions.map(buildConverseTool);
+      system = this.buildSystemPrompt(toolDefinitions);
+    }
 
     const history = await ChatMessage.find({ chatId: chat._id }).sort({ createdAt: 1 }).lean();
     const messages = await this.buildConversation(history);
-    const system = this.buildSystemPrompt(toolDefinitions);
 
     let finalText = "";
     const finalToolCalls: IToolCall[] = [];

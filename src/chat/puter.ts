@@ -202,13 +202,18 @@ function parseToolArguments(raw: string | undefined): Record<string, unknown> {
   }
 }
 
+function buildPuterMessages(params: ConverseStreamParams): unknown[] {
+  const system = params.system ? [{ role: "system", content: params.system }] : [];
+  return [...system, ...toPuterMessages(params.messages)];
+}
+
 export async function streamConverse(
   authToken: string,
   params: ConverseStreamParams,
   onTextDelta?: (delta: string) => void
 ): Promise<StreamResult> {
   const puter = getClient(authToken);
-  const response = (await puter.ai.chat(toPuterMessages(params.messages), {
+  const response = (await puter.ai.chat(buildPuterMessages(params), {
     model: params.modelId,
     stream: true,
     tools: toPuterTools(params.tools ?? []),
@@ -275,7 +280,7 @@ export async function converse(
   params: ConverseStreamParams
 ): Promise<StreamResult> {
   const puter = getClient(authToken);
-  const response = (await puter.ai.chat(toPuterMessages(params.messages), {
+  const response = (await puter.ai.chat(buildPuterMessages(params), {
     model: params.modelId,
     tools: toPuterTools(params.tools ?? []),
     max_tokens: params.maxTokens ?? 2048,
