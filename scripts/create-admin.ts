@@ -1,7 +1,7 @@
 import readlineSync from "readline-sync";
 import mongoose from "mongoose";
-import { User } from "./models/User";
-import { UserRole } from "./types/UserRole";
+import { User } from "../src/models/User";
+import { UserRole } from "../src/types/UserRole";
 
 const MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/flowix";
 

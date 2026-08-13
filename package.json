@@ -11,8 +11,8 @@
     "format": "prettier --write \"src/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\"",
     "seed": "npx tsx src/seed.ts",
-    "create-admin": "npx tsx src/create-admin.ts",
-    "clear-db": "npx tsx src/clear-db.ts",
+    "create-admin": "npx tsx scripts/create-admin.ts",
+    "clear-db": "npx tsx scripts/clear-db.ts",
     "dev": "npx tsx watch src/index.ts"
   },
   "keywords": [],

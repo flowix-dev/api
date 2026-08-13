@@ -70,6 +70,31 @@ export class WorkflowRunner {
     return execution;
   }
 
+  private async persistResolvedInputs(
+    workflowId: string,
+    nodeExecutions: INodeExecution[]
+  ): Promise<void> {
+    const inputsById = new Map<number, Record<string, unknown>>();
+    for (const nodeExec of nodeExecutions) {
+      if (nodeExec.inputData) {
+        inputsById.set(nodeExec.nodeId, nodeExec.inputData as Record<string, unknown>);
+      }
+    }
+    if (inputsById.size === 0) {
+      return;
+    }
+
+    const workflow = await Workflow.findById(workflowId);
+    if (!workflow) {
+      return;
+    }
+    const nodes = workflow.nodes.map((node) =>
+      inputsById.has(node.id) ? { ...node, inputs: inputsById.get(node.id)! } : node
+    );
+    workflow.nodes = nodes as typeof workflow.nodes;
+    await workflow.save();
+  }
+
   private async executeAsync(
     workflow: IWorkflow,
     execution: IWorkflowExecution,
@@ -128,6 +153,8 @@ export class WorkflowRunner {
       const finalStatus = context.failed.size > 0 ? "failed" : "completed";
       const completedAt = new Date();
       const duration = completedAt.getTime() - execution.startedAt.getTime();
+
+      await this.persistResolvedInputs(execution.workflowId.toString(), nodeExecutions);
 
       await WorkflowExecution.findByIdAndUpdate(executionId, {
         $set: {
