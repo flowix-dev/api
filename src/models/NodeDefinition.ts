@@ -24,9 +24,21 @@ const nodeDefinitionSchema = new Schema<INodeDefinition>(
       default: 1,
       min: [1, "Version must be at least 1"],
     },
-    isTool: {
-      type: Boolean,
-      default: false,
+    scope: {
+      type: String,
+      enum: {
+        values: ["workflow", "chat", "all"],
+        message: "Invalid scope: {VALUE}",
+      },
+      default: "all",
+    },
+    activationMode: {
+      type: String,
+      enum: {
+        values: ["all", "any"],
+        message: "Invalid activationMode: {VALUE}",
+      },
+      default: "all",
     },
     inputs: {
       type: [NodePortSchema],

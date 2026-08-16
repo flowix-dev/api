@@ -7,7 +7,8 @@ export interface INodeDefinition {
   fnKey: string;
   category: string;
   version: number;
-  isTool: boolean;
+  scope: "workflow" | "chat" | "all";
+  activationMode?: "all" | "any";
   inputs: INodePort[];
   outputs: INodePort[];
   createdAt: Date;

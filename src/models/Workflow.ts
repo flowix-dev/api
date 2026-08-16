@@ -16,6 +16,12 @@ export const workflowSchema = new Schema<IWorkflow>(
       ref: "User",
       index: true,
     },
+    parentWorkflowId: {
+      type: Types.ObjectId,
+      ref: "Workflow",
+      index: true,
+      default: null,
+    },
     nodes: {
       type: [WorkflowNodeSchema],
       default: [],

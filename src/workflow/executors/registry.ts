@@ -4,6 +4,7 @@ import { ExecutionContext } from "../execution/ExecutionContext";
 
 export interface ExecutorResult {
   outputs: Record<string, unknown>;
+  skipEdges?: string[];
 }
 
 export interface INodeExecutor {
@@ -12,6 +13,7 @@ export interface INodeExecutor {
     inputs: Record<string, unknown>,
     context?: ExecutionContext
   ): Promise<ExecutorResult>;
+  batchMode?: "auto" | "never";
 }
 
 type ExecutorFactory = () => INodeExecutor;

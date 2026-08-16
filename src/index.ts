@@ -13,10 +13,14 @@ import chatRoutes from "./routes/chat.routes";
 import modelRoutes from "./routes/model.routes";
 import assistantRoutes from "./routes/assistant.routes";
 import credentialRoutes from "./routes/credential.routes";
+import webhookRoutes from "./routes/webhook.routes";
+import workflowChatRoutes from "./routes/workflow-chat.routes";
 import "./workflow/executors/index";
 import { connectRedis, disconnectRedis, redisHealth } from "./utils/redis";
 import { createSocketServer, wireWorkflowEvents } from "./socket";
 import { workflowService } from "./services/workflow.service";
+import { workflowScheduler } from "./workflow/WorkflowScheduler";
+import { emailTriggerManager } from "./workflow/EmailTriggerManager";
 
 process.on("uncaughtException", (error) => {
   console.error("[process] Uncaught exception (non-fatal):", error);
@@ -43,6 +47,8 @@ api.use("/chats", chatRoutes);
 api.use("/models", modelRoutes);
 api.use("/assistants", assistantRoutes);
 api.use("/credentials", credentialRoutes);
+api.use("/webhooks", webhookRoutes);
+api.use("/workflow-chat", workflowChatRoutes);
 
 app.get("/health", async (_req, res) => {
   const redisStatus = await redisHealth();
@@ -64,6 +70,12 @@ async function start(): Promise<void> {
     wireWorkflowEvents(workflowService.events);
     console.log("Socket.io initialized");
 
+    workflowScheduler.start();
+    console.log("Workflow scheduler started");
+
+    emailTriggerManager.start();
+    console.log("Email trigger manager started");
+
     server.listen(PORT, () => {
       console.log(`Server running on http://localhost:${PORT}`);
     });
@@ -75,6 +87,8 @@ async function start(): Promise<void> {
 
 async function shutdown(): Promise<void> {
   try {
+    workflowScheduler.stop();
+    emailTriggerManager.stop();
     await disconnectRedis();
     await mongoose.disconnect();
     process.exit(0);

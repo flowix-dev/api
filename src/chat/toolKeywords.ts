@@ -4,7 +4,7 @@ export const TOOL_KEYWORDS: Record<string, string[]> = {
 
 const WORD_PATTERNS: Record<string, RegExp> = {
   "http.request": /(https?:\/\/|curl|\bscrape\b|\bfetch\b|\burl\b|api request|petici[óo]n http)/i,
-  sum: /\bsum\b|\bsuma\b|\bsumar\b|\badd\b|\bplus\b|\btotal\b/i,
+  "math.operation": /\bsum\b|\bsuma\b|\bsumar\b|\badd\b|\bplus\b|\btotal\b/i,
 };
 
 function hasSumNumbers(message: string): boolean {
@@ -21,8 +21,8 @@ export function matchToolByKeywords(
     if (alreadyUsed.has(fnKey)) {
       continue;
     }
-    if (fnKey === "sum") {
-      if (WORD_PATTERNS.sum.test(message) && hasSumNumbers(message)) {
+    if (fnKey === "math.operation") {
+      if (WORD_PATTERNS["math.operation"].test(message) && hasSumNumbers(message)) {
         return fnKey;
       }
       continue;
@@ -45,9 +45,9 @@ export function matchToolByKeywords(
 }
 
 export function inferToolInputs(fnKey: string, message: string): Record<string, unknown> {
-  if (fnKey === "sum") {
+  if (fnKey === "math.operation") {
     const numbers = message.match(/-?\d+(\.\d+)?/g)?.map(Number) ?? [];
-    return { a: numbers[0] ?? 0, b: numbers[1] ?? 0 };
+    return { a: numbers[0] ?? 0, b: numbers[1] ?? 0, operation: "suma" };
   }
   if (fnKey === "http.request") {
     const url = message.match(/https?:\/\/[^\s]+/)?.[0] ?? "";

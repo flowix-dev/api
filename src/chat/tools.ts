@@ -13,7 +13,8 @@ function typeToJsonSchemaType(type: string): string | undefined {
       return "boolean";
     case "string":
       return "string";
-    case "array":
+    case "any[]":
+    case "number[]":
       return "array";
     case "object":
     case "json":

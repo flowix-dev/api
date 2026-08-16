@@ -65,7 +65,7 @@ const workflowExecutionSchema = new Schema<IWorkflowExecution>(
     triggerType: {
       type: String,
       required: [true, "Trigger type is required"],
-      enum: ["manual", "scheduled", "webhook"],
+      enum: ["manual", "scheduled", "webhook", "child"],
     },
     status: {
       type: String,

@@ -1,5 +1,6 @@
 import { Schema } from "mongoose";
 import { NodeDataType } from "../types/NodeDataType";
+import { NodeInputKindValues } from "../types/NodeInputKind";
 import { INodePort } from "../interfaces/NodePort";
 
 export const NodePortSchema = new Schema<INodePort>(
@@ -16,6 +17,16 @@ export const NodePortSchema = new Schema<INodePort>(
         values: Object.values(NodeDataType),
         message: "Invalid NodeDataType: {VALUE}",
       },
+    },
+    input: {
+      type: String,
+      enum: {
+        values: NodeInputKindValues,
+        message: "Invalid NodeInputKind: {VALUE}",
+      },
+    },
+    options: {
+      type: [String],
     },
     required: {
       type: Boolean,

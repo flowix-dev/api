@@ -12,7 +12,9 @@ import { ChatMessage } from "../models/ChatMessage";
 import { Assistant } from "../models/Assistant";
 import { assistantService } from "./assistant.service";
 import { NodeDefinition } from "../models/NodeDefinition";
+import { Workflow } from "../models/Workflow";
 import { executorRegistry } from "../workflow/executors";
+import { ExecutionContext } from "../workflow/execution/ExecutionContext";
 import type {
   ConverseContentBlock,
   ConverseMessage,
@@ -247,9 +249,28 @@ export class ChatService {
     });
     sink.onUserMessage?.(userMessage);
 
-    let toolDefinitions: INodeDefinition[] = [];
-    let tools: ConverseTool[] = [];
+    let toolDefinitions: INodeDefinition[];
+    let tools: ConverseTool[];
     let system: string;
+
+    const userWorkflows = await Workflow.find({
+      authorId: userId,
+      parentWorkflowId: null,
+    })
+      .sort({ updatedAt: -1 })
+      .limit(30)
+      .select("name _id updatedAt nodes")
+      .lean();
+    const workflowSummaries = await this.buildWorkflowSummaries(userWorkflows);
+    const workflowsSummary =
+      workflowSummaries.length > 0
+        ? workflowSummaries
+            .map(
+              (wf) =>
+                `- "${wf.name}" (workflowId: ${wf.id})${wf.nodesDesc ? `\n    Nodos: ${wf.nodesDesc}` : ""}`
+            )
+            .join("\n")
+        : "  (no tenés workflows creados todavía)";
 
     if (assistant) {
       const context = await assistantService.retrieveContext(
@@ -260,14 +281,22 @@ export class ChatService {
       const contextBlock = context
         ? `\n\nContexto de los archivos del asistente (fragmentos en orden de documento):\n${context}`
         : "";
-      system = `${assistant.systemPrompt}${contextBlock}`;
-    } else {
-      toolDefinitions = await NodeDefinition.find({ isTool: true }).sort({
+      toolDefinitions = await NodeDefinition.find({ scope: { $in: ["chat", "all"] } }).sort({
         category: 1,
         name: 1,
       });
       tools = toolDefinitions.map(buildConverseTool);
-      system = this.buildSystemPrompt(toolDefinitions);
+      const assistantToolLines =
+        toolDefinitions.map((def) => `- ${def.name} (${buildToolName(def.fnKey)})`).join("\n") ||
+        "ninguna";
+      system = `${assistant.systemPrompt}\n\nHerramientas disponibles para asistirte:\n${assistantToolLines}\n\nTus workflows disponibles (usá tool_list_workflows para verlos completos):\n${workflowsSummary}${contextBlock}`;
+    } else {
+      toolDefinitions = await NodeDefinition.find({ scope: { $in: ["chat", "all"] } }).sort({
+        category: 1,
+        name: 1,
+      });
+      tools = toolDefinitions.map(buildConverseTool);
+      system = this.buildSystemPrompt(toolDefinitions, workflowsSummary);
     }
 
     const history = await ChatMessage.find({ chatId: chat._id }).sort({ createdAt: 1 }).lean();
@@ -294,7 +323,8 @@ export class ChatService {
               name: buildToolName(matched),
               input: inferToolInputs(matched, input.content),
             },
-            sink
+            sink,
+            userId
           );
           usedToolFnKeys.add(matched);
           finalToolCalls.push(execution.toolCall);
@@ -360,7 +390,8 @@ export class ChatService {
                 name: buildToolName(matched),
                 input: inferToolInputs(matched, input.content),
               },
-              sink
+              sink,
+              userId
             );
             usedToolFnKeys.add(matched);
             finalToolCalls.push(execution.toolCall);
@@ -411,7 +442,7 @@ export class ChatService {
         }
 
         usedToolFnKeys.add(definition.fnKey);
-        const execution = await this.runToolExecution(definition, toolUse, sink);
+        const execution = await this.runToolExecution(definition, toolUse, sink, userId);
         finalToolCalls.push(execution.toolCall);
         toolResultBlocks.push({ toolResult: execution.toolResult });
       }
@@ -436,7 +467,8 @@ export class ChatService {
   private async runToolExecution(
     definition: INodeDefinition,
     toolUse: StreamedToolUse,
-    sink: ChatEventSink
+    sink: ChatEventSink,
+    userId?: string
   ): Promise<ToolExecution> {
     const event: ToolCallEvent = {
       id: toolUse.id,
@@ -447,7 +479,7 @@ export class ChatService {
     sink.onToolStart?.(event);
 
     try {
-      const outputs = await this.executeTool(definition, toolUse.input);
+      const outputs = await this.executeTool(definition, toolUse.input, userId);
       event.output = outputs;
       const toolCall: IToolCall = {
         id: toolUse.id,
@@ -485,7 +517,8 @@ export class ChatService {
 
   private async executeTool(
     definition: INodeDefinition,
-    inputs: Record<string, unknown>
+    inputs: Record<string, unknown>,
+    userId?: string
   ): Promise<Record<string, unknown>> {
     const node: IWorkflowNode = {
       id: 0,
@@ -497,8 +530,12 @@ export class ChatService {
       h: 80,
       inputs,
     };
+    const context = new ExecutionContext();
+    if (userId) {
+      context.userId = userId;
+    }
     const executor = await executorRegistry.getExecutorForNode(node);
-    const result = await executor.execute(node, inputs);
+    const result = await executor.execute(node, inputs, context);
     return result.outputs;
   }
 
@@ -531,7 +568,7 @@ export class ChatService {
     return messages;
   }
 
-  private buildSystemPrompt(toolDefinitions: INodeDefinition[]): string {
+  private buildSystemPrompt(toolDefinitions: INodeDefinition[], workflowsSummary: string): string {
     const toolLines =
       toolDefinitions
         .map((def) => {
@@ -548,12 +585,52 @@ export class ChatService {
         .join("\n") || "ninguna";
 
     return [
-      "Eres Flowpath Assistant, un asistente integrado en la plataforma Flowpath de automatización y workflows.",
+      "Eres Flowix Assistant, un asistente integrado en la plataforma Flowix de automatización y workflows.",
       "Responde siempre en el mismo idioma que usa el usuario.",
       "Cuando el usuario pida una acción que corresponda a una de las herramientas disponibles, usa esa herramienta ejecutándola y entrega el resultado.",
+      "Para ejecutar o crear workflows usá las herramientas correspondientes. Si el usuario menciona un workflow por nombre y necesitás su ID, usá la herramienta tool_list_workflows para buscarlo.",
       "Formatea tus respuestas con Markdown: usa tablas, listas y bloques de código con su lenguaje cuando aporten claridad.",
       `Herramientas disponibles:\n${toolLines}`,
+      `\nTus workflows disponibles (usá tool_list_workflows para verlos completos):\n${workflowsSummary}`,
     ].join("\n\n");
+  }
+
+  private async buildWorkflowSummaries(
+    workflows: Array<{
+      _id: { toString(): string };
+      name: string;
+      nodes: Array<{ nodeDefinitionId: unknown; name?: string }>;
+    }>
+  ): Promise<Array<{ name: string; id: string; nodesDesc: string }>> {
+    const defIds = new Set<string>();
+    for (const wf of workflows) {
+      for (const node of wf.nodes) {
+        defIds.add((node.nodeDefinitionId as { toString(): string }).toString());
+      }
+    }
+    const definitions = await NodeDefinition.find({
+      _id: { $in: [...defIds] },
+    }).lean();
+    const fnKeyById = new Map<string, string>();
+    const nameById = new Map<string, string>();
+    for (const def of definitions) {
+      fnKeyById.set(def._id.toString(), def.fnKey);
+      nameById.set(def._id.toString(), def.name);
+    }
+
+    return workflows.map((wf) => {
+      const nodesDesc = wf.nodes
+        .map((node) => {
+          const defId = (node.nodeDefinitionId as { toString(): string }).toString();
+          return node.name || nameById.get(defId) || fnKeyById.get(defId) || defId;
+        })
+        .join(", ");
+      return {
+        name: wf.name,
+        id: wf._id.toString(),
+        nodesDesc,
+      };
+    });
   }
 }
 

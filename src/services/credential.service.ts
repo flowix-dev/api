@@ -27,6 +27,23 @@ function getConfig(provider: CredentialProvider): ProviderConfig {
       profileUrl: "https://gmail.googleapis.com/gmail/v1/users/me/profile",
     };
   }
+  if (provider === "google") {
+    return {
+      clientId: process.env.GOOGLE_CLIENT_ID || "",
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
+      redirectUri: process.env.GOOGLE_REDIRECT_URI_GOOGLE || "",
+      authorizeUrl: GOOGLE,
+      tokenUrl: GOOGLE_TOKEN,
+      scope: [
+        "https://www.googleapis.com/auth/spreadsheets",
+        "https://www.googleapis.com/auth/documents",
+        "https://www.googleapis.com/auth/presentations",
+        "https://www.googleapis.com/auth/drive.file",
+      ].join(" "),
+      profileUrl: "https://www.googleapis.com/oauth2/v2/userinfo",
+      refreshScope: "offline_access",
+    };
+  }
   return {
     clientId: process.env.MICROSOFT_CLIENT_ID || "",
     clientSecret: process.env.MICROSOFT_CLIENT_SECRET || "",

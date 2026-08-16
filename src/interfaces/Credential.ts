@@ -1,6 +1,6 @@
 import { Types } from "mongoose";
 
-export type CredentialProvider = "gmail" | "outlook";
+export type CredentialProvider = "gmail" | "outlook" | "google";
 
 export interface ICredential {
   authorId: Types.ObjectId;

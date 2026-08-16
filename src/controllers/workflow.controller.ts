@@ -35,13 +35,17 @@ export async function getWorkflow(req: Request, res: Response): Promise<void> {
 export async function createWorkflow(req: Request, res: Response): Promise<void> {
   try {
     const userId = req.user!.userId;
-    const { name, nodes, edges } = req.body as {
+    const { name, nodes, edges, parentWorkflowId } = req.body as {
       name: string;
       nodes?: IWorkflowNode[];
       edges?: IWorkflowEdge[];
+      parentWorkflowId?: string;
     };
 
-    const workflow = await workflowService.createWorkflow({ name, nodes, edges }, userId);
+    const workflow = await workflowService.createWorkflow(
+      { name, nodes, edges, parentWorkflowId },
+      userId
+    );
 
     res.status(201).json({ workflow });
   } catch (error: unknown) {

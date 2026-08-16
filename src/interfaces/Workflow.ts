@@ -5,6 +5,7 @@ import { IWorkflowEdge } from "./WorkflowEdge";
 export interface IWorkflow {
   name: string;
   authorId: Types.ObjectId;
+  parentWorkflowId?: Types.ObjectId;
   nodes: IWorkflowNode[];
   edges: IWorkflowEdge[];
   createdAt: Date;

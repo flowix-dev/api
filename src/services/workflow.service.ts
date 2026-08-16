@@ -1,6 +1,8 @@
 import { Workflow } from "../models/Workflow";
 import { WorkflowExecution } from "../models/WorkflowExecution";
+import { IWorkflowExecution } from "../interfaces/WorkflowExecution";
 import { User } from "../models/User";
+import { NodeDefinition } from "../models/NodeDefinition";
 import { WorkflowRunner } from "../workflow/execution/WorkflowRunner";
 import { UploadedFile } from "../workflow/execution/ExecutionContext";
 import { validateWorkflowGraph } from "../workflow/workflow.validation";
@@ -29,6 +31,33 @@ export class WorkflowService {
     const execution = await this.runner.runWorkflow(workflowId, userId, {
       uploadedFile,
       puterToken: user?.puterToken ?? undefined,
+    });
+
+    return execution;
+  }
+
+  async runWebhookWorkflow(workflowId: string, triggerData: unknown) {
+    const workflow = await Workflow.findById(workflowId);
+    if (!workflow) {
+      throw new Error("Workflow not found");
+    }
+
+    const definitions = await NodeDefinition.find({
+      _id: { $in: workflow.nodes.map((node) => node.nodeDefinitionId) },
+    });
+    if (!definitions.some((def) => def.fnKey === "webhook.trigger")) {
+      throw new Error("Workflow does not expose a webhook trigger");
+    }
+
+    const errors = validateWorkflowGraph(workflow.nodes, workflow.edges);
+    if (errors.length > 0) {
+      throw new Error(`Workflow validation failed: ${errors.map((e) => e.message).join(", ")}`);
+    }
+
+    const user = await User.findById(workflow.authorId).select("puterToken").lean();
+    const execution = await this.runner.runWorkflow(workflowId, workflow.authorId.toString(), {
+      puterToken: user?.puterToken ?? undefined,
+      triggerData,
     });
 
     return execution;
@@ -72,10 +101,11 @@ export class WorkflowService {
     return { executions, total, page, limit };
   }
   async listWorkflows(userId: string, page = 1, limit = 20) {
+    const filter = { authorId: userId, parentWorkflowId: null };
     const skip = (page - 1) * limit;
     const [workflows, total] = await Promise.all([
-      Workflow.find({ authorId: userId }).sort({ updatedAt: -1 }).skip(skip).limit(limit),
-      Workflow.countDocuments({ authorId: userId }),
+      Workflow.find(filter).sort({ updatedAt: -1 }).skip(skip).limit(limit),
+      Workflow.countDocuments(filter),
     ]);
     return { workflows, total, page, limit };
   }
@@ -89,16 +119,45 @@ export class WorkflowService {
   }
 
   async createWorkflow(
-    data: { name: string; nodes?: IWorkflowNode[]; edges?: IWorkflowEdge[] },
+    data: {
+      name: string;
+      nodes?: IWorkflowNode[];
+      edges?: IWorkflowEdge[];
+      parentWorkflowId?: string;
+    },
     userId: string
   ) {
     const workflow = await Workflow.create({
       name: data.name,
       authorId: userId,
+      parentWorkflowId: data.parentWorkflowId || undefined,
       nodes: data.nodes || [],
       edges: data.edges || [],
     });
     return workflow;
+  }
+
+  async runChildWorkflow(
+    workflowId: string,
+    userId: string,
+    childInputs: Record<string, unknown>,
+    options: { uploadedFile?: UploadedFile; puterToken?: string | null } = {}
+  ): Promise<IWorkflowExecution> {
+    const workflow = await Workflow.findById(workflowId);
+    if (!workflow) {
+      throw new Error("Workflow hijo no encontrado");
+    }
+
+    const errors = validateWorkflowGraph(workflow.nodes, workflow.edges);
+    if (errors.length > 0) {
+      throw new Error(`Workflow validation failed: ${errors.map((e) => e.message).join(", ")}`);
+    }
+
+    return this.runner.runWorkflowAndWait(workflowId, userId, {
+      uploadedFile: options.uploadedFile,
+      puterToken: options.puterToken,
+      childInputs,
+    });
   }
 
   async updateWorkflow(

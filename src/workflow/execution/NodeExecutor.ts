@@ -1,9 +1,11 @@
 import { INodeExecution } from "../../interfaces/WorkflowExecution";
-import { executorRegistry } from "../executors/registry";
+import { NodeDefinition } from "../../models/NodeDefinition";
+import { executorRegistry, ExecutorResult, INodeExecutor } from "../executors/registry";
 import { InputResolver } from "./InputResolver";
 import { ExecutionContext } from "./ExecutionContext";
 import { GraphNode } from "./DependencyGraph";
 import { IWorkflowEventEmitter } from "./WorkflowEventEmitter";
+import { prepareArrayInputs, buildBatchPlan, aggregateBatchedOutputs } from "./ArrayBatch";
 
 export class NodeExecutor {
   constructor(
@@ -51,10 +53,36 @@ export class NodeExecutor {
         graphNode.incomingEdges,
         context
       );
-      nodeExecution.inputData = resolvedInputs;
 
-      const executor = await executorRegistry.getExecutorForNode(node);
-      const result = await executor.execute(node, resolvedInputs, context);
+      const definition = await NodeDefinition.findById(node.nodeDefinitionId);
+      if (!definition) {
+        throw new Error(`NodeDefinition not found for id: ${node.nodeDefinitionId}`);
+      }
+      const executor: INodeExecutor = executorRegistry.getExecutor(definition.fnKey);
+
+      const preparedInputs = prepareArrayInputs(resolvedInputs, definition.inputs);
+      nodeExecution.inputData = preparedInputs;
+
+      let result: ExecutorResult;
+      if (executor.batchMode === "never") {
+        result = await executor.execute(node, preparedInputs, context);
+      } else {
+        const plan = buildBatchPlan(preparedInputs, definition.inputs);
+        if (!plan.batched) {
+          result = await executor.execute(node, preparedInputs, context);
+        } else {
+          const perInstanceOutputs: Array<Record<string, unknown>> = [];
+          for (const instance of plan.instances) {
+            const instanceResult = await executor.execute(node, instance, context);
+            perInstanceOutputs.push(instanceResult.outputs);
+          }
+          result = { outputs: aggregateBatchedOutputs(perInstanceOutputs) };
+        }
+      }
+
+      if (result.skipEdges && result.skipEdges.length > 0) {
+        context.setInactiveOutputs(node.id, result.skipEdges);
+      }
 
       context.setOutput(node.id, result.outputs);
       nodeExecution.outputData = result.outputs;

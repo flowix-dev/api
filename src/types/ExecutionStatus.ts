@@ -2,4 +2,4 @@ export type ExecutionStatus = "pending" | "running" | "completed" | "failed" | "
 
 export type NodeExecutionStatus = "pending" | "running" | "completed" | "failed" | "skipped";
 
-export type TriggerType = "manual" | "scheduled" | "webhook";
+export type TriggerType = "manual" | "scheduled" | "webhook" | "child";

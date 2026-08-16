@@ -2,7 +2,7 @@ import { IToolCall } from "../interfaces/ChatMessage";
 
 const TOOL_LABELS: Record<string, string> = {
   "http.request": "petición HTTP",
-  sum: "suma",
+  "math.operation": "operación matemática",
   delay: "retraso",
 };
 
