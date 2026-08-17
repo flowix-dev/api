@@ -4,6 +4,7 @@ import { chatbotChatService } from "../services/chatbot-chat.service";
 import { buildEmbedScript } from "../chatbot-widget";
 import { parseFileBuffer } from "../utils/fileParser";
 import { User } from "../models/User";
+import { Chatbot } from "../models/Chatbot";
 
 const router = Router();
 
@@ -14,9 +15,16 @@ const upload = multer({
 
 router.get("/:chatbotId/embed.js", async (req, res) => {
   try {
+    const { chatbotId } = req.params;
+    const chatbot = await Chatbot.findById(chatbotId).select("_id").lean();
+    if (!chatbot) {
+      res.status(404).send(`console.error("Chatbot not found");`);
+      return;
+    }
+
     const script = buildEmbedScript({
       apiUrl: process.env.PUBLIC_API_URL || "http://localhost:8000/api",
-      chatbotId: req.params.chatbotId,
+      chatbotId,
     });
     res.setHeader("Content-Type", "application/javascript");
     res.setHeader("Cache-Control", "public, max-age=3600");

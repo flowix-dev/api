@@ -38,7 +38,10 @@ app.use(express.json());
 app.use(cookieParser());
 
 const api = express.Router();
-app.use("/api", api);
+
+if (process.env.NODE_ENV === "development") {
+  app.use("/api", api);
+}
 
 api.use("/auth", authRoutes);
 api.use("/users", usersRoutes);

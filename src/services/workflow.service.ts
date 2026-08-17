@@ -73,7 +73,12 @@ export class WorkflowService {
     return execution;
   }
 
-  async getWorkflowExecutions(workflowId: string, page = 1, limit = 20) {
+  async getWorkflowExecutions(workflowId: string, userId: string, page = 1, limit = 20) {
+    const workflow = await Workflow.findOne({ _id: workflowId, authorId: userId });
+    if (!workflow) {
+      throw new Error("Workflow not found");
+    }
+
     const skip = (page - 1) * limit;
     const [executions, total] = await Promise.all([
       WorkflowExecution.find({ workflowId })
@@ -110,8 +115,12 @@ export class WorkflowService {
     return { workflows, total, page, limit };
   }
 
-  async getWorkflow(workflowId: string) {
-    const workflow = await Workflow.findById(workflowId);
+  async getWorkflow(workflowId: string, userId?: string) {
+    const filter: Record<string, unknown> = { _id: workflowId };
+    if (userId) {
+      filter.authorId = userId;
+    }
+    const workflow = await Workflow.findOne(filter);
     if (!workflow) {
       throw new Error("Workflow not found");
     }
@@ -162,17 +171,22 @@ export class WorkflowService {
 
   async updateWorkflow(
     workflowId: string,
+    userId: string,
     data: { name?: string; nodes?: IWorkflowNode[]; edges?: IWorkflowEdge[] }
   ) {
-    const workflow = await Workflow.findByIdAndUpdate(workflowId, { $set: data }, { new: true });
+    const workflow = await Workflow.findOneAndUpdate(
+      { _id: workflowId, authorId: userId },
+      { $set: data },
+      { new: true }
+    );
     if (!workflow) {
       throw new Error("Workflow not found");
     }
     return workflow;
   }
 
-  async deleteWorkflow(workflowId: string) {
-    const workflow = await Workflow.findByIdAndDelete(workflowId);
+  async deleteWorkflow(workflowId: string, userId: string) {
+    const workflow = await Workflow.findOneAndDelete({ _id: workflowId, authorId: userId });
     if (!workflow) {
       throw new Error("Workflow not found");
     }

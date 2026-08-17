@@ -145,27 +145,24 @@ export async function forgotPassword(req: Request, res: Response): Promise<void>
     const { email } = req.body;
     const user = await User.findOne({ email: email.toLowerCase() });
 
-    if (!user) {
-      res.json({ message: "If the email exists, a reset link has been sent" });
-      return;
+    if (user) {
+      const resetToken = crypto.randomBytes(32).toString("hex");
+      const hashedToken = crypto.createHash("sha256").update(resetToken).digest("hex");
+
+      user.passwordResetToken = hashedToken;
+      user.passwordResetExpires = new Date(Date.now() + 60 * 60 * 1000);
+      await user.save();
+
+      await sendPasswordResetEmail({
+        to: user.email,
+        resetToken,
+        firstName: user.firstName,
+      });
     }
-
-    const resetToken = crypto.randomBytes(32).toString("hex");
-    const hashedToken = crypto.createHash("sha256").update(resetToken).digest("hex");
-
-    user.passwordResetToken = hashedToken;
-    user.passwordResetExpires = new Date(Date.now() + 60 * 60 * 1000);
-    await user.save();
-
-    await sendPasswordResetEmail({
-      to: user.email,
-      resetToken,
-      firstName: user.firstName,
-    });
 
     res.json({ message: "If the email exists, a reset link has been sent" });
   } catch {
-    res.status(500).json({ message: "Failed to process request" });
+    res.json({ message: "If the email exists, a reset link has been sent" });
   }
 }
 

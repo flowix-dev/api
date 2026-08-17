@@ -8,7 +8,14 @@ import {
 import { CredentialProvider } from "../interfaces/Credential";
 
 function parseProvider(value: string | undefined): CredentialProvider | null {
-  if (value === "gmail" || value === "outlook" || value === "google") {
+  if (
+    value === "gmail" ||
+    value === "outlook" ||
+    value === "google" ||
+    value === "slack" ||
+    value === "discord" ||
+    value === "whatsapp"
+  ) {
     return value;
   }
   return null;

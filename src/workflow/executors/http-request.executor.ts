@@ -1,12 +1,105 @@
 import { INodeExecutor, ExecutorResult } from "./registry";
 import { IWorkflowNode } from "../../interfaces/WorkflowNode";
+import { URL } from "url";
 
 type AuthType = "none" | "bearer" | "basic" | "api_key";
+
+const BLOCKED_HOSTNAMES = new Set([
+  "localhost",
+  "127.0.0.1",
+  "::1",
+  "0.0.0.0",
+  "169.254.169.254",
+  "metadata.google.internal",
+  "metadata.amazonaws.com",
+]);
+
+function isPrivateIP(ip: string): boolean {
+  if (ip.includes(":")) {
+    return ip === "::1" || ip.startsWith("fc") || ip.startsWith("fd") || ip.startsWith("fe80");
+  }
+  return (
+    ip === "127.0.0.1" ||
+    ip.startsWith("10.") ||
+    ip.startsWith("172.16.") ||
+    ip.startsWith("172.17.") ||
+    ip.startsWith("172.18.") ||
+    ip.startsWith("172.19.") ||
+    ip.startsWith("172.20.") ||
+    ip.startsWith("172.21.") ||
+    ip.startsWith("172.22.") ||
+    ip.startsWith("172.23.") ||
+    ip.startsWith("172.24.") ||
+    ip.startsWith("172.25.") ||
+    ip.startsWith("172.26.") ||
+    ip.startsWith("172.27.") ||
+    ip.startsWith("172.28.") ||
+    ip.startsWith("172.29.") ||
+    ip.startsWith("172.30.") ||
+    ip.startsWith("172.31.") ||
+    ip.startsWith("192.168.") ||
+    ip.startsWith("169.254.") ||
+    ip === "0.0.0.0"
+  );
+}
+
+function isReservedIPv4(ip: string): boolean {
+  const parts = ip.split(".");
+  if (parts.length !== 4) return false;
+  const first = parseInt(parts[0], 10);
+  const second = parseInt(parts[1], 10);
+  return (
+    first === 0 ||
+    first === 10 ||
+    (first === 100 && second >= 64 && second <= 127) ||
+    first === 127 ||
+    (first === 169 && second === 254) ||
+    (first === 172 && second >= 16 && second <= 31) ||
+    (first === 192 && second === 168) ||
+    first >= 224
+  );
+}
+
+function validateUrl(targetUrl: string): void {
+  let parsed: URL;
+  try {
+    parsed = new URL(targetUrl);
+  } catch {
+    throw new Error("Invalid URL");
+  }
+
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+    throw new Error("Only HTTP and HTTPS protocols are allowed");
+  }
+
+  const hostname = parsed.hostname.toLowerCase();
+
+  if (BLOCKED_HOSTNAMES.has(hostname)) {
+    throw new Error("Requests to this host are not allowed");
+  }
+
+  if (/^(\d{1,3}\.){3}\d{1,3}$/.test(hostname) && isReservedIPv4(hostname)) {
+    throw new Error("Requests to private/reserved IP addresses are not allowed");
+  }
+
+  try {
+    const numericParts = hostname.split(".").map(Number);
+    if (numericParts.length === 4 && numericParts.every((p) => p >= 0 && p <= 255)) {
+      if (isReservedIPv4(hostname)) {
+        throw new Error("Requests to private/reserved IP addresses are not allowed");
+      }
+    }
+  } catch (e) {
+    if (e instanceof Error && e.message.includes("not allowed")) throw e;
+  }
+}
 
 export class HttpRequestExecutor implements INodeExecutor {
   async execute(_node: IWorkflowNode, inputs: Record<string, unknown>): Promise<ExecutorResult> {
     const url = (inputs.url as string) || "";
     if (!url) throw new Error("URL is required");
+
+    validateUrl(url);
 
     const method = (inputs.method as string) || "GET";
     const headers = { ...((inputs.headers as Record<string, string>) || {}) };

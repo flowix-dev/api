@@ -13,6 +13,9 @@ import type {
 import { converse as puterConverse, streamConverse as puterStreamConverse } from "../chat/puter";
 import { DEFAULT_MODEL_ID, getModelInfo } from "../chat/models";
 import { User } from "../models/User";
+import { buildConverseTool } from "../chat/tools";
+import { executorRegistry } from "../workflow/executors/registry";
+import { ExecutionContext } from "../workflow/execution/ExecutionContext";
 
 const MAX_TOOL_ITERATIONS = 10;
 
@@ -22,112 +25,26 @@ export interface WorkflowChatEventSink {
   onToolStart?: (call: IWorkflowChatToolCall) => void;
   onToolEnd?: (call: IWorkflowChatToolCall) => void;
   onAssistantMessage?: (message: IWorkflowChatMessage) => void;
+  onWorkflowSwitched?: (workflowId: string) => void;
 }
 
-interface WorkflowChatTool {
-  name: string;
-  description: string;
-  inputSchema: Record<string, unknown>;
-}
-
-const WORKFLOW_TOOLS: WorkflowChatTool[] = [
+const META_TOOLS: ConverseTool[] = [
   {
-    name: "get_workflow",
-    description: "Obtiene el workflow actual completo con todos sus nodos y edges.",
-    inputSchema: { type: "object", properties: {} },
-  },
-  {
-    name: "create_node",
-    description: "Agrega un nodo nuevo al workflow.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        nodeDefinitionId: { type: "string", description: "ID del NodeDefinition" },
-        name: { type: "string", description: "Nombre del nodo" },
-        x: { type: "number", description: "Posición X en el canvas" },
-        y: { type: "number", description: "Posición Y en el canvas" },
-        inputs: { type: "object", description: "Valores de entrada del nodo" },
-      },
-      required: ["nodeDefinitionId", "name", "x", "y"],
+    toolSpec: {
+      name: "get_workflow",
+      description: "Obtiene el workflow actual completo con todos sus nodos y edges.",
+      inputSchema: { json: { type: "object", properties: {} } },
     },
   },
   {
-    name: "delete_node",
-    description: "Elimina un nodo del workflow por su ID.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        nodeId: { type: "number", description: "ID numérico del nodo" },
-      },
-      required: ["nodeId"],
+    toolSpec: {
+      name: "list_node_definitions",
+      description:
+        "Lista todas las definiciones de nodos disponibles con sus IDs, nombres, categorías e inputs/outputs.",
+      inputSchema: { json: { type: "object", properties: {} } },
     },
-  },
-  {
-    name: "update_node",
-    description: "Actualiza las propiedades de un nodo existente.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        nodeId: { type: "number", description: "ID numérico del nodo" },
-        name: { type: "string", description: "Nuevo nombre" },
-        inputs: { type: "object", description: "Nuevos valores de entrada" },
-        x: { type: "number", description: "Nueva posición X" },
-        y: { type: "number", description: "Nueva posición Y" },
-      },
-      required: ["nodeId"],
-    },
-  },
-  {
-    name: "create_edge",
-    description: "Conecta un output de un nodo con un input de otro nodo.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        sourceNodeId: { type: "number", description: "ID del nodo origen" },
-        sourceKey: { type: "string", description: "Key del output" },
-        targetNodeId: { type: "number", description: "ID del nodo destino" },
-        targetKey: { type: "string", description: "Key del input" },
-      },
-      required: ["sourceNodeId", "sourceKey", "targetNodeId", "targetKey"],
-    },
-  },
-  {
-    name: "delete_edge",
-    description: "Elimina una conexión entre nodos.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        sourceNodeId: { type: "number", description: "ID del nodo origen" },
-        sourceKey: { type: "string", description: "Key del output" },
-        targetNodeId: { type: "number", description: "ID del nodo destino" },
-        targetKey: { type: "string", description: "Key del input" },
-      },
-      required: ["sourceNodeId", "sourceKey", "targetNodeId", "targetKey"],
-    },
-  },
-  {
-    name: "list_node_definitions",
-    description:
-      "Lista todas las definiciones de nodos disponibles con sus IDs, nombres, categorías e inputs/outputs.",
-    inputSchema: { type: "object", properties: {} },
   },
 ];
-
-function toConverseTool(tool: WorkflowChatTool): ConverseTool {
-  return {
-    toolSpec: {
-      name: tool.name,
-      description: tool.description,
-      inputSchema: {
-        json: tool.inputSchema as {
-          type: string;
-          properties: Record<string, unknown>;
-          required?: string[];
-        },
-      },
-    },
-  };
-}
 
 function buildToolResult(toolUseId: string, data: unknown): ConverseContentBlock {
   return {
@@ -175,7 +92,10 @@ export class WorkflowChatService {
 
     const nodeDefinitions = await NodeDefinition.find().sort({ category: 1, name: 1 });
 
-    const tools = WORKFLOW_TOOLS.map(toConverseTool);
+    const nodeTools = nodeDefinitions
+      .filter((def) => executorRegistry.hasExecutor(def.fnKey))
+      .map((def) => buildConverseTool(def));
+    const tools = [...META_TOOLS, ...nodeTools];
     const system = this.buildSystemPrompt(workflow, nodeDefinitions);
 
     const history = await WorkflowChatMessage.find({
@@ -274,7 +194,9 @@ export class WorkflowChatService {
             toolUse.input,
             currentWorkflow,
             workflowId,
-            nodeDefinitions
+            userId,
+            nodeDefinitions,
+            sink
           );
 
           toolCall.output = result;
@@ -333,6 +255,7 @@ export class WorkflowChatService {
       edges: Array<Record<string, unknown>>;
     },
     workflowId: string,
+    userId: string,
     nodeDefinitions: Array<{
       _id: unknown;
       fnKey: string;
@@ -340,142 +263,63 @@ export class WorkflowChatService {
       category: string;
       inputs: Array<{ key: string; type: string }>;
       outputs: Array<{ key: string; type: string }>;
-    }>
+    }>,
+    sink: WorkflowChatEventSink
   ): Promise<unknown> {
-    switch (toolName) {
-      case "get_workflow":
-        return {
-          nodes: workflow.nodes,
-          edges: workflow.edges,
-        };
-
-      case "create_node": {
-        const maxId = workflow.nodes.reduce((max, n) => Math.max(max, (n.id as number) ?? 0), 0);
-        const newNode: Record<string, unknown> = {
-          id: maxId + 1,
-          nodeDefinitionId: inputs.nodeDefinitionId,
-          name: inputs.name as string,
-          disabled: false,
-          x: (inputs.x as number) ?? 100,
-          y: (inputs.y as number) ?? 100,
-          w: 200,
-          h: 80,
-          inputs: (inputs.inputs as Record<string, unknown>) ?? {},
-        };
-        workflow.nodes.push(newNode);
-
-        await Workflow.findByIdAndUpdate(workflowId, {
-          $push: { nodes: newNode },
-        });
-
-        return { success: true, node: newNode };
-      }
-
-      case "delete_node": {
-        const nodeId = inputs.nodeId as number;
-        workflow.nodes = workflow.nodes.filter((n) => n.id !== nodeId);
-        workflow.edges = workflow.edges.filter(
-          (e) => e.sourceNodeId !== nodeId && e.targetNodeId !== nodeId
-        );
-
-        await Workflow.findByIdAndUpdate(workflowId, {
-          $pull: { nodes: { id: nodeId } },
-          $pullAll: {
-            edges: workflow.edges.filter(
-              (e) => (e.sourceNodeId as number) === nodeId || (e.targetNodeId as number) === nodeId
-            ),
-          },
-        });
-
-        return { success: true };
-      }
-
-      case "update_node": {
-        const nodeId = inputs.nodeId as number;
-        const node = workflow.nodes.find((n) => n.id === nodeId);
-        if (!node) {
-          throw new Error(`Node ${nodeId} not found`);
-        }
-
-        if (inputs.name !== undefined) node.name = inputs.name;
-        if (inputs.inputs !== undefined)
-          node.inputs = {
-            ...(node.inputs as Record<string, unknown>),
-            ...(inputs.inputs as Record<string, unknown>),
-          };
-        if (inputs.x !== undefined) node.x = inputs.x;
-        if (inputs.y !== undefined) node.y = inputs.y;
-
-        await Workflow.findOneAndUpdate(
-          { _id: workflowId, "nodes.id": nodeId },
-          {
-            $set: {
-              "nodes.$": node,
-            },
-          }
-        );
-
-        return { success: true, node };
-      }
-
-      case "create_edge": {
-        const edge = {
-          sourceNodeId: inputs.sourceNodeId,
-          sourceKey: inputs.sourceKey,
-          targetNodeId: inputs.targetNodeId,
-          targetKey: inputs.targetKey,
-        };
-        workflow.edges.push(edge);
-
-        await Workflow.findByIdAndUpdate(workflowId, {
-          $push: { edges: edge },
-        });
-
-        return { success: true, edge };
-      }
-
-      case "delete_edge": {
-        const edgeIndex = workflow.edges.findIndex(
-          (e) =>
-            e.sourceNodeId === inputs.sourceNodeId &&
-            e.sourceKey === inputs.sourceKey &&
-            e.targetNodeId === inputs.targetNodeId &&
-            e.targetKey === inputs.targetKey
-        );
-
-        if (edgeIndex === -1) {
-          throw new Error("Edge not found");
-        }
-
-        workflow.edges.splice(edgeIndex, 1);
-
-        await Workflow.findByIdAndUpdate(workflowId, {
-          $pull: {
-            edges: {
-              sourceNodeId: inputs.sourceNodeId,
-              sourceKey: inputs.sourceKey,
-              targetNodeId: inputs.targetNodeId,
-              targetKey: inputs.targetKey,
-            },
-          },
-        });
-
-        return { success: true };
-      }
-
-      case "list_node_definitions":
-        return nodeDefinitions.map((def) => ({
-          _id: def._id,
-          fnKey: def.fnKey,
-          name: def.name,
-          category: def.category,
-          inputs: def.inputs.map((p) => ({ key: p.key, type: p.type })),
-          outputs: def.outputs.map((p) => ({ key: p.key, type: p.type })),
-        }));
-
-      default:
-        throw new Error(`Unknown tool: ${toolName}`);
+    if (toolName === "get_workflow") {
+      return { nodes: workflow.nodes, edges: workflow.edges };
     }
+
+    if (toolName === "list_node_definitions") {
+      return nodeDefinitions.map((def) => ({
+        _id: def._id,
+        fnKey: def.fnKey,
+        name: def.name,
+        category: def.category,
+        inputs: def.inputs.map((p) => ({ key: p.key, type: p.type })),
+        outputs: def.outputs.map((p) => ({ key: p.key, type: p.type })),
+      }));
+    }
+
+    const fnKey =
+      nodeDefinitions.find((def) => {
+        const generatedName = `tool_${def.fnKey.replace(/[^a-zA-Z0-9_-]/g, "_")}`;
+        return generatedName === toolName;
+      })?.fnKey ?? toolName;
+
+    if (!executorRegistry.hasExecutor(fnKey)) {
+      throw new Error(`Unknown tool: ${toolName}`);
+    }
+
+    const executor = executorRegistry.getExecutor(fnKey);
+    const context = new ExecutionContext();
+    context.workflowId = workflowId;
+    context.userId = userId;
+
+    const result = await executor.execute(
+      {
+        id: 0,
+        nodeDefinitionId: new Types.ObjectId(),
+        disabled: false,
+        x: 0,
+        y: 0,
+        w: 0,
+        h: 0,
+        inputs,
+      } as never,
+      inputs,
+      context
+    );
+
+    if (fnKey === "create.workflow" && result.outputs.id) {
+      const newId = result.outputs.id as string;
+      workflow._id = new Types.ObjectId(newId);
+      workflow.nodes = [];
+      workflow.edges = [];
+      sink.onWorkflowSwitched?.(newId);
+    }
+
+    return result.outputs;
   }
 
   private buildConversation(history: IWorkflowChatMessage[]): ConverseMessage[] {
@@ -529,11 +373,15 @@ export class WorkflowChatService {
 
     return [
       "Sos el asistente de Flowix para workflows. Tu trabajo es ayudar al usuario a crear y modificar workflows.",
-      "Los workflows están compuestos por nodos conectados por edges.",
-      "Cada nodo tiene un tipo (fnKey) que determina qué hace.",
       "",
-      "IMPORTANTE: Cuando el usuario te pida crear o modificar un workflow, usá las herramientas disponibles.",
-      "Siempre explicá qué estás haciendo cuando creás o modificás el workflow.",
+      "FLUJO DE TRABAJO:",
+      "1. Usá get_workflow para ver el estado actual del workflow.",
+      "2. Usá list_node_definitions para ver los tipos de nodos disponibles.",
+      "3. Hacé las modificaciones necesarias.",
+      "4. Usá edit_workflow enviando los arrays completos de nodes y edges con los cambios aplicados.",
+      "5. Si el usuario pide crear un workflow nuevo, usá create_workflow y después edit_workflow para poblarlo.",
+      "",
+      "IMPORTANTE: edit_workflow reemplaza TODO el contenido del workflow. Siempre enviá los arrays completos.",
       "",
       "Estructura actual del workflow:",
       `- Nodos (${nodes.length}):\n${nodesSummary || "  (vacío)"}`,

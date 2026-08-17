@@ -1,10 +1,11 @@
 import { Router } from "express";
 import { workflowService } from "../services/workflow.service";
 import { resolveWebhookWait } from "../workflow/executors/webhook-wait.executor";
+import { verifyWebhookSignature } from "../middleware/webhook-auth";
 
 const router = Router();
 
-router.post("/:workflowId", async (req, res) => {
+router.post("/:workflowId", verifyWebhookSignature, async (req, res) => {
   try {
     const body = req.body;
 

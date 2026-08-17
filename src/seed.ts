@@ -2484,13 +2484,22 @@ const seedNodeDefinitions = [
     category: "triggers",
     version: 1,
     scope: "workflow",
-    inputs: [],
+    inputs: [
+      {
+        key: "credentials",
+        type: NodeDataType.CREDENTIALS,
+        input: "credentials",
+        required: true,
+        description: "Conectá tu workspace de Slack",
+      },
+    ],
     outputs: [
       { key: "channel", type: NodeDataType.STRING, description: "Canal de donde vino el mensaje" },
       { key: "user", type: NodeDataType.STRING, description: "Usuario que envió el mensaje" },
       { key: "text", type: NodeDataType.STRING, description: "Contenido del mensaje" },
       { key: "team", type: NodeDataType.STRING, description: "Workspace de Slack" },
       { key: "timestamp", type: NodeDataType.STRING, description: "Timestamp del mensaje" },
+      { key: "messageType", type: NodeDataType.STRING, description: "channel, dm, o group" },
     ],
   },
   {
@@ -2499,13 +2508,22 @@ const seedNodeDefinitions = [
     category: "triggers",
     version: 1,
     scope: "workflow",
-    inputs: [],
+    inputs: [
+      {
+        key: "credentials",
+        type: NodeDataType.CREDENTIALS,
+        input: "credentials",
+        required: true,
+        description: "Conectá tu bot de Discord",
+      },
+    ],
     outputs: [
       { key: "channelId", type: NodeDataType.STRING, description: "ID del canal" },
       { key: "author", type: NodeDataType.STRING, description: "Usuario que envió el mensaje" },
       { key: "content", type: NodeDataType.STRING, description: "Contenido del mensaje" },
-      { key: "guildId", type: NodeDataType.STRING, description: "ID del servidor" },
+      { key: "guildId", type: NodeDataType.STRING, description: "ID del servidor (null en DMs)" },
       { key: "timestamp", type: NodeDataType.STRING, description: "Timestamp del mensaje" },
+      { key: "messageType", type: NodeDataType.STRING, description: "channel, dm, o group" },
     ],
   },
   {
@@ -2601,7 +2619,15 @@ const seedNodeDefinitions = [
     category: "triggers",
     version: 1,
     scope: "workflow",
-    inputs: [],
+    inputs: [
+      {
+        key: "credentials",
+        type: NodeDataType.CREDENTIALS,
+        input: "credentials",
+        required: true,
+        description: "Conectá tu cuenta de WhatsApp Business",
+      },
+    ],
     outputs: [
       { key: "from", type: NodeDataType.STRING, description: "Número del remitente" },
       { key: "name", type: NodeDataType.STRING, description: "Nombre del remitente" },
@@ -2712,6 +2738,50 @@ const seedNodeDefinitions = [
       { key: "id", type: NodeDataType.STRING, description: "ID del workflow creado" },
       { key: "url", type: NodeDataType.STRING, description: "URL para abrir el workflow" },
       { key: "name", type: NodeDataType.STRING, description: "Nombre del workflow creado" },
+    ],
+  },
+  {
+    name: "Edit Workflow",
+    fnKey: "edit.workflow",
+    category: "flow",
+    version: 1,
+    scope: "all",
+    inputs: [
+      {
+        key: "workflowId",
+        type: NodeDataType.STRING,
+        input: "text",
+        required: true,
+        description: "ID del workflow a editar",
+      },
+      {
+        key: "name",
+        type: NodeDataType.STRING,
+        input: "text",
+        required: false,
+        description: "Nuevo nombre del workflow (opcional)",
+      },
+      {
+        key: "nodes",
+        type: NodeDataType.JSON,
+        input: "textarea",
+        required: false,
+        description: "Array completo de nodos — reemplaza los existentes (opcional)",
+      },
+      {
+        key: "edges",
+        type: NodeDataType.JSON,
+        input: "textarea",
+        required: false,
+        description: "Array completo de conexiones — reemplaza las existentes (opcional)",
+      },
+    ],
+    outputs: [
+      { key: "id", type: NodeDataType.STRING, description: "ID del workflow editado" },
+      { key: "url", type: NodeDataType.STRING, description: "URL para abrir el workflow" },
+      { key: "name", type: NodeDataType.STRING, description: "Nombre del workflow" },
+      { key: "nodeCount", type: NodeDataType.NUMBER, description: "Cantidad de nodos" },
+      { key: "edgeCount", type: NodeDataType.NUMBER, description: "Cantidad de conexiones" },
     ],
   },
   {

@@ -20,6 +20,14 @@ export class SlackTriggerExecutor implements INodeExecutor {
       data = raw as Record<string, unknown>;
     }
 
+    const channelType = String(data.channel_type ?? "");
+    let messageType = "channel";
+    if (channelType === "D") {
+      messageType = "dm";
+    } else if (channelType === "G") {
+      messageType = "group";
+    }
+
     return {
       outputs: {
         channel: data.channel_name ?? data.channel_id ?? "",
@@ -27,6 +35,7 @@ export class SlackTriggerExecutor implements INodeExecutor {
         text: data.text ?? "",
         team: data.team_domain ?? data.team_id ?? "",
         timestamp: data.ts ?? "",
+        messageType,
       },
     };
   }

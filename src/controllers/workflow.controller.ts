@@ -22,8 +22,9 @@ export async function listWorkflows(req: Request, res: Response): Promise<void> 
 export async function getWorkflow(req: Request, res: Response): Promise<void> {
   try {
     const workflowId = req.params.workflowId as string;
+    const userId = req.user!.userId;
 
-    const workflow = await workflowService.getWorkflow(workflowId);
+    const workflow = await workflowService.getWorkflow(workflowId, userId);
 
     res.json({ workflow });
   } catch (error: unknown) {
@@ -57,13 +58,18 @@ export async function createWorkflow(req: Request, res: Response): Promise<void>
 export async function updateWorkflow(req: Request, res: Response): Promise<void> {
   try {
     const workflowId = req.params.workflowId as string;
+    const userId = req.user!.userId;
     const { name, nodes, edges } = req.body as {
       name?: string;
       nodes?: IWorkflowNode[];
       edges?: IWorkflowEdge[];
     };
 
-    const workflow = await workflowService.updateWorkflow(workflowId, { name, nodes, edges });
+    const workflow = await workflowService.updateWorkflow(workflowId, userId, {
+      name,
+      nodes,
+      edges,
+    });
 
     res.json({ workflow });
   } catch (error: unknown) {
@@ -75,8 +81,9 @@ export async function updateWorkflow(req: Request, res: Response): Promise<void>
 export async function deleteWorkflow(req: Request, res: Response): Promise<void> {
   try {
     const workflowId = req.params.workflowId as string;
+    const userId = req.user!.userId;
 
-    await workflowService.deleteWorkflow(workflowId);
+    await workflowService.deleteWorkflow(workflowId, userId);
 
     res.json({ message: "Workflow deleted" });
   } catch (error: unknown) {
@@ -152,10 +159,11 @@ export async function getExecution(req: Request, res: Response): Promise<void> {
 export async function getWorkflowExecutions(req: Request, res: Response): Promise<void> {
   try {
     const workflowId = req.params.workflowId as string;
+    const userId = req.user!.userId;
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 20;
 
-    const result = await workflowService.getWorkflowExecutions(workflowId, page, limit);
+    const result = await workflowService.getWorkflowExecutions(workflowId, userId, page, limit);
 
     res.json(result);
   } catch (error: unknown) {

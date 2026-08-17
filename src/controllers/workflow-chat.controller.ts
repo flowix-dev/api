@@ -80,6 +80,9 @@ export class WorkflowChatController {
             toolCalls: msg.toolCalls,
           });
         },
+        onWorkflowSwitched: (newWorkflowId) => {
+          sendEvent("workflow.switched", { workflowId: newWorkflowId });
+        },
       });
 
       sendEvent("done", { _id: message._id });

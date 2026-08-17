@@ -44,6 +44,49 @@ function getConfig(provider: CredentialProvider): ProviderConfig {
       refreshScope: "offline_access",
     };
   }
+  if (provider === "slack") {
+    return {
+      clientId: process.env.SLACK_CLIENT_ID || "",
+      clientSecret: process.env.SLACK_CLIENT_SECRET || "",
+      redirectUri: process.env.SLACK_REDIRECT_URI || "",
+      authorizeUrl: "https://slack.com/oauth/v2/authorize",
+      tokenUrl: "https://slack.com/api/oauth.v2.access",
+      scope: [
+        "chat:write",
+        "channels:history",
+        "channels:read",
+        "groups:history",
+        "groups:read",
+        "im:history",
+        "im:read",
+        "mpim:history",
+        "mpim:read",
+      ].join(" "),
+      profileUrl: "https://slack.com/api/auth.test",
+    };
+  }
+  if (provider === "discord") {
+    return {
+      clientId: process.env.DISCORD_CLIENT_ID || "",
+      clientSecret: process.env.DISCORD_CLIENT_SECRET || "",
+      redirectUri: process.env.DISCORD_REDIRECT_URI || "",
+      authorizeUrl: "https://discord.com/api/oauth2/authorize",
+      tokenUrl: "https://discord.com/api/oauth2/token",
+      scope: "bot identify",
+      profileUrl: "https://discord.com/api/users/@me",
+    };
+  }
+  if (provider === "whatsapp") {
+    return {
+      clientId: process.env.WHATSAPP_APP_ID || "",
+      clientSecret: process.env.WHATSAPP_APP_SECRET || "",
+      redirectUri: process.env.WHATSAPP_REDIRECT_URI || "",
+      authorizeUrl: "https://www.facebook.com/v19.0/dialog/oauth",
+      tokenUrl: "https://graph.facebook.com/v19.0/oauth/access_token",
+      scope: " whatsapp_business_messaging",
+      profileUrl: "https://graph.facebook.com/v19.0/me",
+    };
+  }
   return {
     clientId: process.env.MICROSOFT_CLIENT_ID || "",
     clientSecret: process.env.MICROSOFT_CLIENT_SECRET || "",

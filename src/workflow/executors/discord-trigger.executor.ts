@@ -21,14 +21,23 @@ export class DiscordTriggerExecutor implements INodeExecutor {
     }
 
     const author = data.author as Record<string, unknown> | undefined;
+    const guildId = data.guild_id ?? "";
+
+    let messageType = "channel";
+    if (!guildId) {
+      messageType = "dm";
+    } else if (data.type === 3) {
+      messageType = "group";
+    }
 
     return {
       outputs: {
         channelId: data.channel_id ?? "",
         author: author?.username ?? author?.id ?? "",
         content: data.content ?? "",
-        guildId: data.guild_id ?? "",
+        guildId: guildId,
         timestamp: data.timestamp ?? "",
+        messageType,
       },
     };
   }

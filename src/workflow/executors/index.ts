@@ -39,6 +39,7 @@ import { WhatsAppSendExecutor } from "./whatsapp-send.executor";
 import { WhatsAppTriggerExecutor } from "./whatsapp-trigger.executor";
 import { RunWorkflowExecutor } from "./run-workflow.executor";
 import { CreateWorkflowExecutor } from "./create-workflow.executor";
+import { EditWorkflowExecutor } from "./edit-workflow.executor";
 import { ListWorkflowsExecutor } from "./list-workflows.executor";
 import { GetInputsExecutor } from "./get-inputs.executor";
 import { SendOutputsExecutor } from "./send-outputs.executor";
@@ -112,6 +113,7 @@ executorRegistry.register("whatsapp.send", () => new WhatsAppSendExecutor());
 executorRegistry.register("whatsapp.trigger", () => new WhatsAppTriggerExecutor());
 executorRegistry.register("run.workflow", () => new RunWorkflowExecutor());
 executorRegistry.register("create.workflow", () => new CreateWorkflowExecutor());
+executorRegistry.register("edit.workflow", () => new EditWorkflowExecutor());
 executorRegistry.register("list.workflows", () => new ListWorkflowsExecutor());
 executorRegistry.register("get.inputs", () => new GetInputsExecutor());
 executorRegistry.register("send.outputs", () => new SendOutputsExecutor());
@@ -191,6 +193,7 @@ export {
   WhatsAppTriggerExecutor,
   RunWorkflowExecutor,
   CreateWorkflowExecutor,
+  EditWorkflowExecutor,
   ListWorkflowsExecutor,
   GetInputsExecutor,
   SendOutputsExecutor,
