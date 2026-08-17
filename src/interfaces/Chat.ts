@@ -5,6 +5,7 @@ export interface IChat {
   title: string;
   model: string;
   assistantId?: Types.ObjectId | null;
+  chatbotId?: Types.ObjectId | null;
   createdAt: Date;
   updatedAt: Date;
 }

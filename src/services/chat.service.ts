@@ -5,14 +5,17 @@ import { IChatFile } from "../interfaces/ChatFile";
 import { IChatMessage, IAttachment, IToolCall } from "../interfaces/ChatMessage";
 import { INodeDefinition } from "../interfaces/NodeDefinition";
 import { IAssistant } from "../interfaces/Assistant";
+import { IChatbot } from "../interfaces/Chatbot";
 import { IWorkflowNode } from "../interfaces/WorkflowNode";
 import { Chat } from "../models/Chat";
 import { ChatFile } from "../models/ChatFile";
 import { ChatMessage } from "../models/ChatMessage";
 import { Assistant } from "../models/Assistant";
 import { assistantService } from "./assistant.service";
+import { chatbotService } from "./chatbot.service";
 import { NodeDefinition } from "../models/NodeDefinition";
 import { Workflow } from "../models/Workflow";
+import { Chatbot } from "../models/Chatbot";
 import { executorRegistry } from "../workflow/executors";
 import { ExecutionContext } from "../workflow/execution/ExecutionContext";
 import type {
@@ -74,7 +77,7 @@ export class ChatService {
 
   async createChat(
     userId: string,
-    input: { title?: string; model?: string; assistantId?: string }
+    input: { title?: string; model?: string; assistantId?: string; chatbotId?: string }
   ): Promise<IChat> {
     let modelId = input.model ?? "";
     let title = input.title?.trim() ?? "";
@@ -91,12 +94,25 @@ export class ChatService {
       title = title || assistant.name;
     }
 
+    if (input.chatbotId) {
+      const chatbot = await Chatbot.findOne({
+        _id: input.chatbotId,
+        authorId: userId,
+      }).lean();
+      if (!chatbot) {
+        throw new Error("Chatbot not found");
+      }
+      modelId = chatbot.model;
+      title = title || chatbot.name;
+    }
+
     const modelInfo = getModelInfo(modelId) ?? getModelInfo(DEFAULT_MODEL_ID);
     return Chat.create({
       authorId: userId,
       title: title || `Chat ${modelInfo!.name}`,
       model: modelInfo!.id,
       assistantId: input.assistantId ?? null,
+      chatbotId: input.chatbotId ?? null,
     });
   }
 
@@ -220,8 +236,20 @@ export class ChatService {
       }
     }
 
+    let chatbot: IChatbot | null = null;
+    if (chat.chatbotId) {
+      chatbot = await Chatbot.findOne({
+        _id: chat.chatbotId,
+        authorId: userId,
+      }).lean();
+      if (!chatbot) {
+        throw new Error("Chatbot not found");
+      }
+    }
+
     const modelInfo =
-      getModelInfo(assistant?.model ?? chat.model) ?? getModelInfo(DEFAULT_MODEL_ID)!;
+      getModelInfo(assistant?.model ?? chatbot?.model ?? chat.model) ??
+      getModelInfo(DEFAULT_MODEL_ID)!;
 
     const user = await User.findById(userId).select("puterToken").lean();
     const puterToken = user?.puterToken ?? null;
@@ -290,6 +318,29 @@ export class ChatService {
         toolDefinitions.map((def) => `- ${def.name} (${buildToolName(def.fnKey)})`).join("\n") ||
         "ninguna";
       system = `${assistant.systemPrompt}\n\nHerramientas disponibles para asistirte:\n${assistantToolLines}\n\nTus workflows disponibles (usá tool_list_workflows para verlos completos):\n${workflowsSummary}${contextBlock}`;
+    } else if (chatbot) {
+      const context = await chatbotService.retrieveContext(
+        chatbot._id.toString(),
+        userId,
+        input.content
+      );
+      const contextBlock = context
+        ? `\n\nContexto de los archivos del chatbot (fragmentos en orden de documento):\n${context}`
+        : "";
+      const chatbotFnKeys = chatbot.tools.map((t) => t.fnKey);
+      toolDefinitions =
+        chatbotFnKeys.length > 0
+          ? await NodeDefinition.find({
+              fnKey: { $in: chatbotFnKeys },
+              publicTool: true,
+              scope: { $in: ["chat", "all"] },
+            }).sort({ category: 1, name: 1 })
+          : [];
+      tools = toolDefinitions.map(buildConverseTool);
+      const chatbotToolLines =
+        toolDefinitions.map((def) => `- ${def.name} (${buildToolName(def.fnKey)})`).join("\n") ||
+        "ninguna";
+      system = `${chatbot.systemPrompt}\n\nHerramientas disponibles:\n${chatbotToolLines}${contextBlock}`;
     } else {
       toolDefinitions = await NodeDefinition.find({ scope: { $in: ["chat", "all"] } }).sort({
         category: 1,

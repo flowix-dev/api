@@ -15,6 +15,8 @@ import assistantRoutes from "./routes/assistant.routes";
 import credentialRoutes from "./routes/credential.routes";
 import webhookRoutes from "./routes/webhook.routes";
 import workflowChatRoutes from "./routes/workflow-chat.routes";
+import chatbotRoutes from "./routes/chatbot.routes";
+import publicChatbotRoutes from "./routes/public-chatbot.routes";
 import "./workflow/executors/index";
 import { connectRedis, disconnectRedis, redisHealth } from "./utils/redis";
 import { createSocketServer, wireWorkflowEvents } from "./socket";
@@ -49,6 +51,8 @@ api.use("/assistants", assistantRoutes);
 api.use("/credentials", credentialRoutes);
 api.use("/webhooks", webhookRoutes);
 api.use("/workflow-chat", workflowChatRoutes);
+api.use("/chatbots", chatbotRoutes);
+api.use("/chatbots", publicChatbotRoutes);
 
 app.get("/health", async (_req, res) => {
   const redisStatus = await redisHealth();

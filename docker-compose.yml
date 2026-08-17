@@ -2,6 +2,7 @@ services:
   mongodb:
     image: mongo:7.0
     container_name: flowix-mongodb
+    restart: unless-stopped
     ports:
       - "27017:27017"
     volumes:
@@ -10,6 +11,7 @@ services:
   redis:
     image: redis:7.2
     container_name: flowix-redis
+    restart: unless-stopped
     ports:
       - "6379:6379"
     command: ["redis-server", "--save", "", "--appendonly", "no"]
@@ -17,6 +19,7 @@ services:
   localstack:
     image: localstack/localstack:2.0
     container_name: flowix-localstack
+    restart: unless-stopped
     ports:
       - "4566:4566"
       - "4571:4571"

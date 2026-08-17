@@ -8,6 +8,7 @@ export interface INodeDefinition {
   category: string;
   version: number;
   scope: "workflow" | "chat" | "all";
+  publicTool?: boolean;
   activationMode?: "all" | "any";
   inputs: INodePort[];
   outputs: INodePort[];

@@ -32,6 +32,10 @@ const nodeDefinitionSchema = new Schema<INodeDefinition>(
       },
       default: "all",
     },
+    publicTool: {
+      type: Boolean,
+      default: false,
+    },
     activationMode: {
       type: String,
       enum: {

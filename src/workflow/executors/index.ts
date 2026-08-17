@@ -49,6 +49,28 @@ import { ReturnEndExecutor } from "./return-end.executor";
 import { TryCatchExecutor } from "./try-catch.executor";
 import { FileUploadExecutor } from "./file-upload.executor";
 import { FileParserExecutor } from "./file-parser.executor";
+import { RandomNumberExecutor } from "./random-number.executor";
+import { GetDateTimeExecutor } from "./get-datetime.executor";
+import { WebSearchExecutor } from "./web-search.executor";
+import { NumberFormatterExecutor } from "./number-formatter.executor";
+import { DateFormatterExecutor } from "./date-formatter.executor";
+import { NotionReadDatabaseExecutor } from "./notion-read-database.executor";
+import { NotionQueryDatabaseExecutor } from "./notion-query-database.executor";
+import { NotionUpdatePageExecutor } from "./notion-update-page.executor";
+import { GoogleCalendarCreateEventExecutor } from "./google-calendar-create-event.executor";
+import { GoogleCalendarListEventsExecutor } from "./google-calendar-list-events.executor";
+import {
+  StripeChargeCreateExecutor,
+  StripeCustomerCreateExecutor,
+  StripeSubscriptionCreateExecutor,
+} from "./stripe.executor";
+import { OpenAIChatExecutor } from "./openai-chat.executor";
+import { SupabaseQueryExecutor } from "./supabase-query.executor";
+import { FirebaseQueryExecutor } from "./firebase-query.executor";
+import { CounterExecutor } from "./counter.executor";
+import { AccumulatorExecutor } from "./accumulator.executor";
+import { WebhookWaitExecutor } from "./webhook-wait.executor";
+import { RetryExecutor } from "./retry.executor";
 
 executorRegistry.register("noop", () => new NoopExecutor());
 executorRegistry.register("delay", () => new DelayExecutor());
@@ -100,6 +122,32 @@ executorRegistry.register("return.end", () => new ReturnEndExecutor());
 executorRegistry.register("try.catch", () => new TryCatchExecutor());
 executorRegistry.register("file.upload", () => new FileUploadExecutor());
 executorRegistry.register("file.parser", () => new FileParserExecutor());
+executorRegistry.register("random.number", () => new RandomNumberExecutor());
+executorRegistry.register("datetime.get", () => new GetDateTimeExecutor());
+executorRegistry.register("web.search", () => new WebSearchExecutor());
+executorRegistry.register("number.format", () => new NumberFormatterExecutor());
+executorRegistry.register("date.format", () => new DateFormatterExecutor());
+executorRegistry.register("notion.readDatabase", () => new NotionReadDatabaseExecutor());
+executorRegistry.register("notion.queryDatabase", () => new NotionQueryDatabaseExecutor());
+executorRegistry.register("notion.updatePage", () => new NotionUpdatePageExecutor());
+executorRegistry.register(
+  "google.calendar.createEvent",
+  () => new GoogleCalendarCreateEventExecutor()
+);
+executorRegistry.register(
+  "google.calendar.listEvents",
+  () => new GoogleCalendarListEventsExecutor()
+);
+executorRegistry.register("stripe.charge", () => new StripeChargeCreateExecutor());
+executorRegistry.register("stripe.customer", () => new StripeCustomerCreateExecutor());
+executorRegistry.register("stripe.subscription", () => new StripeSubscriptionCreateExecutor());
+executorRegistry.register("openai.chat", () => new OpenAIChatExecutor());
+executorRegistry.register("supabase.query", () => new SupabaseQueryExecutor());
+executorRegistry.register("firebase.query", () => new FirebaseQueryExecutor());
+executorRegistry.register("counter", () => new CounterExecutor());
+executorRegistry.register("accumulator", () => new AccumulatorExecutor());
+executorRegistry.register("webhook.wait", () => new WebhookWaitExecutor());
+executorRegistry.register("retry", () => new RetryExecutor());
 
 export {
   executorRegistry,
@@ -153,5 +201,25 @@ export {
   TryCatchExecutor,
   FileUploadExecutor,
   FileParserExecutor,
+  RandomNumberExecutor,
+  GetDateTimeExecutor,
+  WebSearchExecutor,
+  NumberFormatterExecutor,
+  DateFormatterExecutor,
+  NotionReadDatabaseExecutor,
+  NotionQueryDatabaseExecutor,
+  NotionUpdatePageExecutor,
+  GoogleCalendarCreateEventExecutor,
+  GoogleCalendarListEventsExecutor,
+  StripeChargeCreateExecutor,
+  StripeCustomerCreateExecutor,
+  StripeSubscriptionCreateExecutor,
+  OpenAIChatExecutor,
+  SupabaseQueryExecutor,
+  FirebaseQueryExecutor,
+  CounterExecutor,
+  AccumulatorExecutor,
+  WebhookWaitExecutor,
+  RetryExecutor,
 };
 export type { INodeExecutor, ExecutorResult } from "./registry";

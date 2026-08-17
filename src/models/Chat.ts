@@ -26,6 +26,12 @@ const chatSchema = new Schema<IChat>(
       default: null,
       index: true,
     },
+    chatbotId: {
+      type: Schema.Types.ObjectId,
+      ref: "Chatbot",
+      default: null,
+      index: true,
+    },
   },
   { timestamps: true }
 );
