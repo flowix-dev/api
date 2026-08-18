@@ -14,35 +14,6 @@ const BLOCKED_HOSTNAMES = new Set([
   "metadata.amazonaws.com",
 ]);
 
-function isPrivateIP(ip: string): boolean {
-  if (ip.includes(":")) {
-    return ip === "::1" || ip.startsWith("fc") || ip.startsWith("fd") || ip.startsWith("fe80");
-  }
-  return (
-    ip === "127.0.0.1" ||
-    ip.startsWith("10.") ||
-    ip.startsWith("172.16.") ||
-    ip.startsWith("172.17.") ||
-    ip.startsWith("172.18.") ||
-    ip.startsWith("172.19.") ||
-    ip.startsWith("172.20.") ||
-    ip.startsWith("172.21.") ||
-    ip.startsWith("172.22.") ||
-    ip.startsWith("172.23.") ||
-    ip.startsWith("172.24.") ||
-    ip.startsWith("172.25.") ||
-    ip.startsWith("172.26.") ||
-    ip.startsWith("172.27.") ||
-    ip.startsWith("172.28.") ||
-    ip.startsWith("172.29.") ||
-    ip.startsWith("172.30.") ||
-    ip.startsWith("172.31.") ||
-    ip.startsWith("192.168.") ||
-    ip.startsWith("169.254.") ||
-    ip === "0.0.0.0"
-  );
-}
-
 function isReservedIPv4(ip: string): boolean {
   const parts = ip.split(".");
   if (parts.length !== 4) return false;

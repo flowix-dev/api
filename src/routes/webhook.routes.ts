@@ -8,6 +8,7 @@ const router = Router();
 router.post("/:workflowId", verifyWebhookSignature, async (req, res) => {
   try {
     const body = req.body;
+    const workflowId = req.params.workflowId as string;
 
     if (body.type === "url_verification" && body.challenge) {
       res.status(200).json({ challenge: body.challenge });
@@ -18,7 +19,7 @@ router.post("/:workflowId", verifyWebhookSignature, async (req, res) => {
       const entry = body.entry?.[0];
       const changes = entry?.changes?.[0];
       if (changes?.field === "messages") {
-        const execution = await workflowService.runWebhookWorkflow(req.params.workflowId, body);
+        const execution = await workflowService.runWebhookWorkflow(workflowId, body);
         res.status(202).json({
           message: "Workflow execution started",
           execution: {
@@ -30,7 +31,7 @@ router.post("/:workflowId", verifyWebhookSignature, async (req, res) => {
       }
     }
 
-    const execution = await workflowService.runWebhookWorkflow(req.params.workflowId, body);
+    const execution = await workflowService.runWebhookWorkflow(workflowId, body);
     res.status(202).json({
       message: "Workflow execution started",
       execution: {

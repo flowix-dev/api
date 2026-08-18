@@ -7,7 +7,7 @@
   "scripts": {
     "build": "tsc",
     "clean": "tsc --build --clean",
-    "lint": "eslint src/ --ext .ts",
+    "lint": "eslint src/ --ext .ts && tsc --noEmit",
     "format": "prettier --write \"src/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\"",
     "seed": "npx tsx src/seed.ts",
