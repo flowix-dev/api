@@ -15,3 +15,8 @@ jobs:
           cd ~/apps/flowix-api
           git fetch origin main
           git reset --hard origin/main
+
+      - name: Deploy
+        run: |
+          cd ~/apps/flowix-api
+          docker compose -f docker-compose.prod.yml up -d --build
