@@ -10,8 +10,8 @@
     "lint": "eslint src/ --ext .ts && tsc --noEmit",
     "format": "prettier --write \"src/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\"",
-    "seed": "npx tsx src/seed.ts",
-    "create-admin": "npx tsx scripts/create-admin.ts",
+    "seed": "npx tsx src/scripts/seed.ts",
+    "create-admin": "npx tsx src/scripts/create-admin.ts",
     "dev": "npx tsx watch src/index.ts"
   },
   "keywords": [],

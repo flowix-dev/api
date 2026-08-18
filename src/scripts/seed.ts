@@ -1,7 +1,7 @@
 import "dotenv/config";
 import mongoose from "mongoose";
-import { NodeDefinition } from "./models/NodeDefinition";
-import { NodeDataType } from "./types/NodeDataType";
+import { NodeDefinition } from "../models/NodeDefinition";
+import { NodeDataType } from "../types/NodeDataType";
 
 const MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/flowix";
 
