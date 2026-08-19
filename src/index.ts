@@ -54,8 +54,8 @@ api.use("/assistants", assistantRoutes);
 api.use("/credentials", credentialRoutes);
 api.use("/webhooks", webhookRoutes);
 api.use("/workflow-chat", workflowChatRoutes);
-api.use("/chatbots", chatbotRoutes);
 api.use("/chatbots", publicChatbotRoutes);
+api.use("/chatbots", chatbotRoutes);
 
 app.get("/health", async (_req, res) => {
   const redisStatus = await redisHealth();

@@ -23,7 +23,7 @@ router.get("/:chatbotId/embed.js", async (req, res) => {
     }
 
     const script = buildEmbedScript({
-      apiUrl: process.env.PUBLIC_API_URL || "http://localhost:8000/api",
+      apiUrl: (process.env.FRONTEND_URL || "http://localhost:3000") + "/api",
       chatbotId,
     });
     res.setHeader("Content-Type", "application/javascript");
