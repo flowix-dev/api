@@ -15,12 +15,13 @@ export async function listChats(req: Request, res: Response): Promise<void> {
 export async function createChat(req: Request, res: Response): Promise<void> {
   try {
     const userId = req.user!.userId;
-    const { title, model, assistantId } = req.body as {
+    const { title, model, assistantId, chatbotId } = req.body as {
       title?: string;
       model?: string;
       assistantId?: string;
+      chatbotId?: string;
     };
-    const chat = await chatService.createChat(userId, { title, model, assistantId });
+    const chat = await chatService.createChat(userId, { title, model, assistantId, chatbotId });
     res.status(201).json({ chat });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Failed to create chat";
