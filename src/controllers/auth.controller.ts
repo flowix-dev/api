@@ -5,11 +5,11 @@ import { signAccessToken, signRefreshToken, verifyRefreshToken } from "../utils/
 import { sendPasswordResetEmail } from "../utils/email";
 
 const isProd = process.env.NODE_ENV === "production";
-const COOKIE_OPTIONS: { httpOnly: boolean; secure: boolean; sameSite: "lax" | "none"; domain?: string } = {
+const COOKIE_OPTIONS = {
   httpOnly: true,
   secure: isProd,
-  sameSite: isProd ? "none" : "lax",
-  domain: isProd ? process.env.COOKIE_DOMAIN : undefined,
+  sameSite: (isProd ? "none" : "lax") as "none" | "lax",
+  domain: isProd ? (process.env.COOKIE_DOMAIN || undefined) : undefined,
 };
 
 function setAuthCookies(res: Response, accessToken: string, refreshToken: string): void {
