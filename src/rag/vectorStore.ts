@@ -24,9 +24,7 @@ function cosineSimilarity(a: number[], b: number[]): number {
     normA += a[i] * a[i];
     normB += b[i] * b[i];
   }
-  if (normA === 0 || normB === 0) {
-    return 0;
-  }
+  if (normA === 0 || normB === 0) return 0;
   return dot / (Math.sqrt(normA) * Math.sqrt(normB));
 }
 
@@ -39,8 +37,7 @@ interface StoredItem {
   order: number;
 }
 
-const STORE_TYPE =
-  process.env.VECTOR_STORE || (process.env.NODE_ENV === "production" ? "pinecone" : "local");
+const STORE_TYPE = process.env.VECTOR_STORE || "local";
 
 class LocalRagStore implements RagStore {
   private readonly filePath: string;
@@ -53,13 +50,9 @@ class LocalRagStore implements RagStore {
   }
 
   private load(): void {
-    if (this.loaded) {
-      return;
-    }
+    if (this.loaded) return;
     this.loaded = true;
-    if (!existsSync(this.filePath)) {
-      return;
-    }
+    if (!existsSync(this.filePath)) return;
     try {
       const raw = readFileSync(this.filePath, "utf8");
       const parsed = JSON.parse(raw) as StoredItem[];
@@ -72,17 +65,13 @@ class LocalRagStore implements RagStore {
   }
 
   private persist(): void {
-    if (this.items.length === 0 && !existsSync(this.filePath)) {
-      return;
-    }
+    if (this.items.length === 0 && !existsSync(this.filePath)) return;
     mkdirSync(dirname(this.filePath), { recursive: true });
     writeFileSync(this.filePath, JSON.stringify(this.items));
   }
 
   async addTexts(input: { assistantId: string; fileId: string; texts: string[] }): Promise<void> {
-    if (input.texts.length === 0) {
-      return;
-    }
+    if (input.texts.length === 0) return;
     this.load();
     const vectors = await getEmbeddings().embedDocuments(input.texts);
     for (let i = 0; i < input.texts.length; i++) {
@@ -129,17 +118,13 @@ class LocalRagStore implements RagStore {
     this.items = this.items.filter(
       (item) => !(item.assistantId === input.assistantId && item.fileId === input.fileId)
     );
-    if (this.items.length !== before) {
-      this.persist();
-    }
+    if (this.items.length !== before) this.persist();
   }
 }
 
 class PineconeRagStore implements RagStore {
   async addTexts(input: { assistantId: string; fileId: string; texts: string[] }): Promise<void> {
-    if (input.texts.length === 0) {
-      return;
-    }
+    if (input.texts.length === 0) return;
     const store = await this.storeFor(input.assistantId);
     await store.addDocuments(
       input.texts.map((text, index) => ({

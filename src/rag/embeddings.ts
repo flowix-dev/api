@@ -1,50 +1,49 @@
 import { Embeddings } from "@langchain/core/embeddings";
-import { pipeline, type FeatureExtractionPipeline } from "@huggingface/transformers";
 
-const MODEL = process.env.EMBEDDINGS_MODEL || "Xenova/multilingual-e5-small";
+const HF_API_KEY = process.env.HF_API_KEY || "";
+const MODEL = process.env.EMBEDDINGS_MODEL || "sentence-transformers/all-MiniLM-L6-v2";
+const HF_API_URL = "https://api-inference.huggingface.co/pipeline/feature-extraction";
 
-class HfEmbeddings extends Embeddings {
-  private pipelinePromise: Promise<FeatureExtractionPipeline> | null = null;
-
-  constructor(fields: Record<string, never> = {}) {
-    super(fields);
-  }
-
-  private async getPipeline(): Promise<FeatureExtractionPipeline> {
-    if (!this.pipelinePromise) {
-      this.pipelinePromise = pipeline(
-        "feature-extraction",
-        MODEL
-      ) as Promise<FeatureExtractionPipeline>;
-    }
-    return this.pipelinePromise;
+class HfApiEmbeddings extends Embeddings {
+  constructor() {
+    super({});
   }
 
   private async embed(texts: string[]): Promise<number[][]> {
-    const featureExtractor = await this.getPipeline();
-    const output = await featureExtractor(texts, {
-      pooling: "mean",
-      normalize: true,
+    const response = await fetch(`${HF_API_URL}/${MODEL}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(HF_API_KEY ? { Authorization: `Bearer ${HF_API_KEY}` } : {}),
+      },
+      body: JSON.stringify({ inputs: texts, options: { pooling: "mean", normalize: true } }),
     });
-    const data = output as unknown as { tolist: () => number[][] };
-    return data.tolist();
+
+    if (!response.ok) {
+      throw new Error(`HuggingFace API error: ${response.status}`);
+    }
+
+    const data = (await response.json()) as number[][] | number[][][];
+    return Array.isArray(data[0]) && Array.isArray(data[0][0])
+      ? (data as number[][])
+      : (data as number[][]);
   }
 
   async embedDocuments(documents: string[]): Promise<number[][]> {
-    return this.embed(documents.map((doc) => `passage: ${doc}`));
+    return this.embed(documents);
   }
 
   async embedQuery(document: string): Promise<number[]> {
-    const [vector] = await this.embed([`query: ${document}`]);
+    const [vector] = await this.embed([document]);
     return vector;
   }
 }
 
-let shared: HfEmbeddings | null = null;
+let shared: HfApiEmbeddings | null = null;
 
-export function getEmbeddings(): HfEmbeddings {
+export function getEmbeddings(): HfApiEmbeddings {
   if (!shared) {
-    shared = new HfEmbeddings();
+    shared = new HfApiEmbeddings();
   }
   return shared;
 }
