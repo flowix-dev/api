@@ -65,10 +65,11 @@ export function buildEmbedScript(config: EmbedConfig): string {
       '.flowix-messages{flex:1;overflow-y:auto;padding:16px;background:#f6f7fa;display:flex;flex-direction:column;gap:8px}',
       '.flowix-bubble{max-width:80%;padding:9px 12px;border-radius:14px;white-space:pre-wrap;word-wrap:break-word;font-size:13.5px}',
       '.flowix-user{align-self:flex-end;color:#fff;border-bottom-right-radius:4px}',
-      '.flowix-bot{align-self:flex-start;background:#fff;border:1px solid #e2e6ee;border-bottom-left-radius:4px}',
+      '.flowix-bot{align-self:flex-start;background:#fff;border:1px solid #e2e6ee;border-bottom-left-radius:4px;color:#0f1a2e}',
       '.flowix-tool{font-size:11px;color:#8792a8;padding:2px 4px}',
       '.flowix-input-wrap{display:flex;gap:8px;padding:10px 12px;border-top:1px solid #e2e6ee;background:#fff}',
-      '.flowix-input{flex:1;border:1px solid #e2e6ee;border-radius:20px;padding:8px 14px;outline:none;font-size:13.5px;font-family:inherit}',
+      '.flowix-input{flex:1;border:1px solid #e2e6ee;border-radius:20px;padding:8px 14px;outline:none;font-size:13.5px;font-family:inherit;resize:none;overflow:hidden;max-height:120px;color:#0f1a2e}',
+      '.flowix-input::placeholder{color:#48556a;opacity:1}',
       '.flowix-input:focus{border-color:' + color + '}',
       '.flowix-attach{background:none;border:none;cursor:pointer;color:#8792a8;padding:0 4px;display:flex;align-items:center}',
       '.flowix-attach:hover{color:' + color + '}',
@@ -106,7 +107,8 @@ export function buildEmbedScript(config: EmbedConfig): string {
     var windowEl = document.createElement('div');
     windowEl.className = 'flowix-window';
     windowEl.style.display = 'none';
-    windowEl.style.right = isLeft ? 'auto' : '0';
+    windowEl.style.bottom = '20px';
+    windowEl.style.right = isLeft ? 'auto' : '20px';
     windowEl.style.left = isLeft ? '0' : 'auto';
 
     var header = document.createElement('div');
@@ -212,13 +214,13 @@ export function buildEmbedScript(config: EmbedConfig): string {
         typing.remove();
         var text = String(data.text || '').slice(0, 20000);
         pendingFileText = pendingFileText
-          ? pendingFileText + '\n\n[Archivo: ' + originalName + ']\n' + text
-          : '[Archivo: ' + originalName + ']\n' + text;
+          ? pendingFileText + '\\n\\n[Archivo: ' + originalName + ']\\n' + text
+          : '[Archivo: ' + originalName + ']\\n' + text;
         addFileChip(originalName, function () {
           pendingFileText = '';
         });
       }).catch(function (error) {
-        typing.textContent = '⚠ ' + (error.message || 'No se pudo subir el archivo');
+        typing.textContent = '! ' + (error.message || 'No se pudo subir el archivo');
       });
 
       fileInput.value = '';
@@ -253,7 +255,7 @@ export function buildEmbedScript(config: EmbedConfig): string {
     function sendMessage() {
       var text = input.value.trim();
       if (!text && !pendingFileText) return;
-      var finalContent = pendingFileText ? pendingFileText + '\n\n' + text : text;
+      var finalContent = pendingFileText ? pendingFileText + '\\n\\n' + text : text;
       input.value = '';
       input.style.height = 'auto';
 
@@ -318,7 +320,7 @@ export function buildEmbedScript(config: EmbedConfig): string {
                     typing.textContent = finalText;
                     messages.scrollTop = messages.scrollHeight;
                   } else if (eventType === 'error') {
-                    typing.textContent = '⚠ ' + (parsed.message || 'Error');
+                    typing.textContent = '! ' + (parsed.message || 'Error');
                   }
                 } catch (e) {}
               }
@@ -329,7 +331,7 @@ export function buildEmbedScript(config: EmbedConfig): string {
 
         return read();
       }).catch(function (error) {
-        typing.textContent = '⚠ ' + (error.message || 'Error de conexión');
+        typing.textContent = '! ' + (error.message || 'Error de conexión');
       });
     }
 
