@@ -10,6 +10,7 @@ import {
   runWorkflow,
   downloadFile,
   getWorkflowExecutions,
+  cancelExecution,
 } from "../controllers/workflow.controller";
 
 const router = Router();
@@ -20,6 +21,7 @@ const upload = multer({
 });
 
 router.post("/:workflowId/run", authenticate, upload.single("file"), runWorkflow);
+router.post("/executions/:executionId/cancel", authenticate, cancelExecution);
 router.get("/files/*key", authenticate, downloadFile);
 router.get("/:workflowId/executions", authenticate, getWorkflowExecutions);
 router.get("/", authenticate, listWorkflows);

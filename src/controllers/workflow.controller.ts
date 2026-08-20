@@ -98,18 +98,16 @@ export async function runWorkflow(req: Request, res: Response): Promise<void> {
     const userId = req.user!.userId;
 
     const file = req.file;
-    const execution = await workflowService.runWorkflow(
-      workflowId,
-      userId,
-      file
+    const execution = await workflowService.runWorkflow(workflowId, userId, {
+      uploadedFile: file
         ? {
             buffer: file.buffer,
             originalname: file.originalname,
             mimetype: file.mimetype,
             size: file.size,
           }
-        : undefined
-    );
+        : undefined,
+    });
 
     res.status(202).json({
       message: "Workflow execution started",
@@ -141,6 +139,18 @@ export async function downloadFile(req: Request, res: Response): Promise<void> {
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Failed to download file";
     res.status(404).json({ message });
+  }
+}
+
+export async function cancelExecution(req: Request, res: Response): Promise<void> {
+  try {
+    const executionId = req.params.executionId as string;
+    const userId = req.user!.userId;
+    await workflowService.cancelExecution(executionId, userId);
+    res.json({ message: "Execution cancelled" });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Failed to cancel execution";
+    res.status(400).json({ message });
   }
 }
 

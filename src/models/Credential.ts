@@ -12,7 +12,7 @@ const credentialSchema = new Schema<ICredential>(
     provider: {
       type: String,
       required: true,
-      enum: ["gmail", "outlook", "google"],
+      enum: ["gmail", "outlook", "google", "slack", "discord", "whatsapp"],
       index: true,
     },
     accessToken: { type: String, required: true },

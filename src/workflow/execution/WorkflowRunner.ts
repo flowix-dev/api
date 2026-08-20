@@ -30,9 +30,19 @@ export class WorkflowRunner {
   private readonly eventEmitter: IWorkflowEventEmitter = new WorkflowEventEmitter();
   private readonly inputResolver = new InputResolver();
   private readonly nodeExecutor = new NodeExecutor(this.inputResolver, this.eventEmitter);
+  private readonly runningContexts = new Map<string, ExecutionContext>();
 
   get events(): IWorkflowEventEmitter {
     return this.eventEmitter;
+  }
+
+  cancelExecution(executionId: string): boolean {
+    const context = this.runningContexts.get(executionId);
+    if (!context) {
+      return false;
+    }
+    context.halt();
+    return true;
   }
 
   async runWorkflow(
@@ -155,6 +165,8 @@ export class WorkflowRunner {
     context.puterToken = opts.puterToken ?? null;
     context.triggerData = opts.triggerData ?? null;
     context.childInputs = opts.childInputs ?? null;
+    this.runningContexts.set(executionId, context);
+
     const graph = new DependencyGraph(workflow.nodes, workflow.edges);
     const nodeExecutions: INodeExecution[] = [];
     const semaphore = createSemaphore(opts.maxConcurrentNodes);
@@ -362,6 +374,8 @@ export class WorkflowRunner {
         duration,
         error: errorMessage,
       });
+    } finally {
+      this.runningContexts.delete(executionId);
     }
   }
 }

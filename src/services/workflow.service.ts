@@ -16,7 +16,11 @@ export class WorkflowService {
     return this.runner.events;
   }
 
-  async runWorkflow(workflowId: string, userId: string, uploadedFile?: UploadedFile) {
+  async runWorkflow(
+    workflowId: string,
+    userId: string,
+    options?: { uploadedFile?: UploadedFile; triggerData?: unknown }
+  ) {
     const workflow = await Workflow.findById(workflowId);
     if (!workflow) {
       throw new Error("Workflow not found");
@@ -29,8 +33,9 @@ export class WorkflowService {
 
     const user = await User.findById(userId).select("puterToken").lean();
     const execution = await this.runner.runWorkflow(workflowId, userId, {
-      uploadedFile,
+      uploadedFile: options?.uploadedFile,
       puterToken: user?.puterToken ?? undefined,
+      triggerData: options?.triggerData,
     });
 
     return execution;
@@ -61,6 +66,29 @@ export class WorkflowService {
     });
 
     return execution;
+  }
+
+  async cancelExecution(executionId: string, userId: string): Promise<void> {
+    const execution = await WorkflowExecution.findById(executionId);
+    if (!execution) {
+      throw new Error("Execution not found");
+    }
+
+    const workflow = await Workflow.findById(execution.workflowId);
+    if (!workflow || workflow.authorId.toString() !== userId) {
+      throw new Error("Execution not found");
+    }
+
+    if (execution.status !== "running") {
+      throw new Error("Execution is not running");
+    }
+
+    const cancelled = this.runner.cancelExecution(executionId);
+    if (!cancelled) {
+      await WorkflowExecution.findByIdAndUpdate(executionId, {
+        $set: { status: "cancelled", completedAt: new Date() },
+      });
+    }
   }
 
   async getExecution(executionId: string) {
