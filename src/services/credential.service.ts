@@ -95,7 +95,7 @@ function getConfig(provider: CredentialProvider): ProviderConfig {
     redirectUri: process.env.MICROSOFT_REDIRECT_URI || "",
     authorizeUrl: "https://login.microsoftonline.com/common/oauth2/v2.0/authorize",
     tokenUrl: "https://login.microsoftonline.com/common/oauth2/v2.0/token",
-    scope: "Mail.Send offline_access User.Read",
+    scope: "Mail.Read Mail.Send offline_access User.Read",
     profileUrl: "https://graph.microsoft.com/v1.0/me",
   };
 }
