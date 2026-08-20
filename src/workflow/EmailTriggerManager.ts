@@ -2,7 +2,6 @@ import { NodeDefinition } from "../models/NodeDefinition";
 import { Workflow } from "../models/Workflow";
 import { Credential } from "../models/Credential";
 import { workflowService } from "../services/workflow.service";
-import { resolveEmailWait } from "./executors/gmail-trigger.executor";
 
 interface CheckedAccount {
   userId: string;
@@ -130,27 +129,18 @@ export class EmailTriggerManager {
 
     for (let i = 0; i < newMessages.length; i++) {
       const emailData = newMessages[i];
-      const resolved = resolveEmailWait(workflowId, {
-        from: emailData.from,
-        subject: emailData.subject,
-        body: emailData.body,
-        date: emailData.date,
-      });
-
-      if (!resolved) {
-        workflowService
-          .runWorkflow(workflowId, authorId, {
-            triggerData: {
-              from: emailData.from,
-              subject: emailData.subject,
-              body: emailData.body,
-              date: emailData.date,
-            },
-          })
-          .catch((error) => {
-            console.error(`[email-trigger] Run failed for workflow ${workflowId}:`, error);
-          });
-      }
+      workflowService
+        .runWorkflow(workflowId, authorId, {
+          triggerData: {
+            from: emailData.from,
+            subject: emailData.subject,
+            body: emailData.body,
+            date: emailData.date,
+          },
+        })
+        .catch((error) => {
+          console.error(`[email-trigger] Run failed for workflow ${workflowId}:`, error);
+        });
     }
 
     this.checkedAccounts.set(key, {

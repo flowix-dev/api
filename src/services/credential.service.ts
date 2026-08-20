@@ -24,7 +24,8 @@ function getConfig(provider: CredentialProvider): ProviderConfig {
       redirectUri: process.env.GOOGLE_REDIRECT_URI || "",
       authorizeUrl: GOOGLE,
       tokenUrl: GOOGLE_TOKEN,
-      scope: "https://www.googleapis.com/auth/gmail.send",
+      scope:
+        "https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send",
       profileUrl: "https://gmail.googleapis.com/gmail/v1/users/me/profile",
     };
   }

@@ -2540,6 +2540,14 @@ const seedNodeDefinitions = [
         required: true,
         description: "Conectá tu cuenta de Gmail",
       },
+      {
+        key: "timeout",
+        type: NodeDataType.NUMBER,
+        input: "number",
+        required: false,
+        defaultValue: 300,
+        description: "Segundos a esperar por un email nuevo (default 300)",
+      },
     ],
     outputs: [
       { key: "from", type: NodeDataType.STRING, description: "Email del remitente" },
