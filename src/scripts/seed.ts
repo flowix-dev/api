@@ -2492,6 +2492,21 @@ const seedNodeDefinitions = [
         required: true,
         description: "Conectá tu workspace de Slack",
       },
+      {
+        key: "channelId",
+        type: NodeDataType.STRING,
+        input: "text",
+        required: false,
+        description: "ID del canal a escuchar (vacío = cualquiera)",
+      },
+      {
+        key: "timeout",
+        type: NodeDataType.NUMBER,
+        input: "number",
+        required: false,
+        defaultValue: 300,
+        description: "Segundos a esperar por un mensaje nuevo (default 300)",
+      },
     ],
     outputs: [
       { key: "channel", type: NodeDataType.STRING, description: "Canal de donde vino el mensaje" },
@@ -2515,6 +2530,21 @@ const seedNodeDefinitions = [
         input: "credentials",
         required: true,
         description: "Conectá tu bot de Discord",
+      },
+      {
+        key: "channelId",
+        type: NodeDataType.STRING,
+        input: "text",
+        required: false,
+        description: "ID del canal a escuchar (vacío = cualquiera)",
+      },
+      {
+        key: "timeout",
+        type: NodeDataType.NUMBER,
+        input: "number",
+        required: false,
+        defaultValue: 300,
+        description: "Segundos a esperar por un mensaje nuevo (default 300)",
       },
     ],
     outputs: [
@@ -2571,6 +2601,14 @@ const seedNodeDefinitions = [
         required: true,
         description: "Conectá tu cuenta de Outlook",
       },
+      {
+        key: "timeout",
+        type: NodeDataType.NUMBER,
+        input: "number",
+        required: false,
+        defaultValue: 300,
+        description: "Segundos a esperar por un email nuevo (default 300)",
+      },
     ],
     outputs: [
       { key: "from", type: NodeDataType.STRING, description: "Email del remitente" },
@@ -2587,18 +2625,27 @@ const seedNodeDefinitions = [
     version: 1,
     inputs: [
       {
+        key: "credentials",
+        type: NodeDataType.CREDENTIALS,
+        input: "credentials",
+        required: false,
+        description:
+          "Conectá tu cuenta de WhatsApp Business (OAuth) — si lo usás, no hace falta Access Token",
+      },
+      {
         key: "phoneNumberId",
         type: NodeDataType.STRING,
         input: "text",
-        required: true,
-        description: "Phone Number ID (de Meta Business)",
+        required: false,
+        description:
+          "Phone Number ID (de Meta Business) — dejalo vacío para auto-detectar con credentials",
       },
       {
         key: "accessToken",
         type: NodeDataType.STRING,
         input: "text",
-        required: true,
-        description: "Access Token de WhatsApp Business API",
+        required: false,
+        description: "Access Token de WhatsApp Business API (si no usás credentials)",
       },
       {
         key: "to",
@@ -2634,6 +2681,21 @@ const seedNodeDefinitions = [
         input: "credentials",
         required: true,
         description: "Conectá tu cuenta de WhatsApp Business",
+      },
+      {
+        key: "phoneNumberId",
+        type: NodeDataType.STRING,
+        input: "text",
+        required: false,
+        description: "Phone Number ID de WhatsApp (vacío = cualquier número de tu cuenta)",
+      },
+      {
+        key: "timeout",
+        type: NodeDataType.NUMBER,
+        input: "number",
+        required: false,
+        defaultValue: 300,
+        description: "Segundos a esperar por un mensaje nuevo (default 300)",
       },
     ],
     outputs: [

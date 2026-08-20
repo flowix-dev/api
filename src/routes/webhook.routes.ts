@@ -5,6 +5,48 @@ import { verifyWebhookSignature } from "../middleware/webhook-auth";
 
 const router = Router();
 
+router.get("/whatsapp", async (req, res) => {
+  const mode = req.query["hub.mode"] as string;
+  const token = req.query["hub.verify_token"] as string;
+  const challenge = req.query["hub.challenge"] as string;
+  if (mode === "subscribe" && token === process.env.WHATSAPP_VERIFY_TOKEN) {
+    res.status(200).send(challenge);
+    return;
+  }
+  res.sendStatus(403);
+});
+
+router.post("/whatsapp", async (req, res) => {
+  try {
+    const body = req.body;
+    if (body.object === "whatsapp_business_account") {
+      const { Workflow } = await import("../models/Workflow");
+      const { NodeDefinition } = await import("../models/NodeDefinition");
+      const entry = body.entry?.[0];
+      const changes = entry?.changes?.[0];
+      const value = changes?.value as Record<string, unknown> | undefined;
+      const metadata = value?.metadata as Record<string, unknown> | undefined;
+      const incomingPhoneId = (metadata?.phone_number_id as string) ?? "";
+
+      const defs = await NodeDefinition.find({ fnKey: "whatsapp.trigger" }).lean();
+      const ids = defs.map((d) => d._id.toString());
+      const workflows = await Workflow.find({
+        "nodes.nodeDefinitionId": { $in: ids },
+      }).lean();
+      for (const wf of workflows) {
+        const node = wf.nodes.find((n) => ids.includes(n.nodeDefinitionId.toString()));
+        const phoneId = (node?.inputs as Record<string, unknown> | undefined)?.phoneNumberId as
+          string | undefined;
+        if (phoneId && incomingPhoneId && phoneId !== incomingPhoneId) continue;
+        workflowService.runWebhookWorkflow(wf._id.toString(), body).catch(() => {});
+      }
+    }
+    res.sendStatus(200);
+  } catch {
+    res.sendStatus(200);
+  }
+});
+
 router.post("/:workflowId", verifyWebhookSignature, async (req, res) => {
   try {
     const body = req.body;
