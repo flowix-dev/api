@@ -1,7 +1,7 @@
 import { Embeddings } from "@langchain/core/embeddings";
 
 const HF_API_KEY = process.env.HF_API_KEY || "";
-const MODEL = process.env.EMBEDDINGS_MODEL || "sentence-transformers/all-MiniLM-L6-v2";
+const MODEL = process.env.EMBEDDINGS_MODEL || "BAAI/bge-small-en-v1.5";
 const HF_API_URL = "https://router.huggingface.co/hf-inference/models";
 
 class HfApiEmbeddings extends Embeddings {
