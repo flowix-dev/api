@@ -205,7 +205,7 @@ export class WorkflowService {
     const workflow = await Workflow.findOneAndUpdate(
       { _id: workflowId, authorId: userId },
       { $set: data },
-      { new: true }
+      { returnDocument: "after" }
     );
     if (!workflow) {
       throw new Error("Workflow not found");

@@ -74,7 +74,7 @@ export class EditWorkflowExecutor implements INodeExecutor {
     const updated = await Workflow.findOneAndUpdate(
       { _id: rawWorkflowId, authorId: context.userId },
       { $set: update },
-      { new: true }
+      { returnDocument: "after" }
     );
 
     if (!updated) {

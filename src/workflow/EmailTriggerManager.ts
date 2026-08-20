@@ -1,3 +1,4 @@
+import { Types } from "mongoose";
 import { NodeDefinition } from "../models/NodeDefinition";
 import { Workflow } from "../models/Workflow";
 import { Credential } from "../models/Credential";
@@ -98,11 +99,20 @@ export class EmailTriggerManager {
     const key = `${workflowId}:${credentialsId}`;
     const existing = this.checkedAccounts.get(key);
 
-    const credential = await Credential.findOne({
-      _id: credentialsId,
-      authorId: authorId,
-      provider,
-    }).lean();
+    const credential = Types.ObjectId.isValid(credentialsId)
+      ? ((await Credential.findOne({
+          _id: credentialsId,
+          authorId: authorId,
+          provider,
+        }).lean()) ??
+        (await Credential.findOne({
+          authorId: authorId,
+          provider,
+        }).lean()))
+      : await Credential.findOne({
+          authorId: authorId,
+          provider,
+        }).lean();
 
     if (!credential) {
       return;

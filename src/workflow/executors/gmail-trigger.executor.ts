@@ -15,20 +15,54 @@ async function fetchLatestGmailEmail(accessToken: string): Promise<Record<string
   if (!listData.messages?.length) return null;
   const msgId = listData.messages[0].id;
   const msgRes = await fetch(
-    `https://gmail.googleapis.com/gmail/v1/users/me/messages/${msgId}?format=metadata`,
+    `https://gmail.googleapis.com/gmail/v1/users/me/messages/${msgId}?format=full`,
     { headers: { Authorization: `Bearer ${accessToken}` } }
   );
   if (!msgRes.ok) return null;
   const msgData = (await msgRes.json()) as {
     id: string;
-    payload?: { headers?: Array<{ name: string; value: string }> };
+    snippet?: string;
+    payload?: {
+      headers?: Array<{ name: string; value: string }>;
+      body?: { data?: string };
+      parts?: Array<{ mimeType: string; body?: { data?: string }; parts?: unknown[] }>;
+    };
     internalDate?: string;
   };
   const headers = msgData.payload?.headers ?? [];
+  let body = "";
+  const decode = (d?: string) => {
+    if (!d) return "";
+    try {
+      return Buffer.from(d.replace(/-/g, "+").replace(/_/g, "/"), "base64").toString("utf-8");
+    } catch {
+      return "";
+    }
+  };
+  const payload = msgData.payload;
+  if (payload?.parts) {
+    const flat = (parts: unknown[]): string => {
+      for (const p of parts as Array<{
+        mimeType: string;
+        body?: { data?: string };
+        parts?: unknown[];
+      }>) {
+        if (p.mimeType === "text/plain" && p.body?.data) return decode(p.body.data);
+        if (p.parts) {
+          const r = flat(p.parts);
+          if (r) return r;
+        }
+      }
+      return "";
+    };
+    body = flat(payload.parts) || decode(payload.body?.data) || msgData.snippet || "";
+  } else {
+    body = decode(payload?.body?.data) || msgData.snippet || "";
+  }
   return {
     from: headers.find((h) => h.name === "From")?.value ?? "",
     subject: headers.find((h) => h.name === "Subject")?.value ?? "",
-    body: "",
+    body,
     date: headers.find((h) => h.name === "Date")?.value ?? "",
     attachments: [],
     id: msgData.id,
