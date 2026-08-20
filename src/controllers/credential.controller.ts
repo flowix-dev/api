@@ -6,6 +6,7 @@ import {
   handleCallback,
 } from "../services/credential.service";
 import { CredentialProvider } from "../interfaces/Credential";
+import { verifyAccessToken } from "../utils/jwt";
 
 function parseProvider(value: string | undefined): CredentialProvider | null {
   if (
@@ -28,7 +29,7 @@ export async function getAuthUrl(req: Request, res: Response): Promise<void> {
       res.status(400).json({ message: "Invalid provider" });
       return;
     }
-    const url = buildAuthUrl(provider);
+    const url = buildAuthUrl(provider, req.user!.userId);
     res.json({ url });
   } catch (error: unknown) {
     res.status(400).json({
@@ -41,11 +42,27 @@ export async function oauthCallback(req: Request, res: Response): Promise<void> 
   try {
     const provider = parseProvider(req.params.provider as string);
     const code = req.query.code as string | undefined;
+    const state = req.query.state as string | undefined;
     if (!provider || !code) {
       res.status(400).send("Missing provider or code");
       return;
     }
-    await handleCallback(req.user!.userId, provider, code);
+
+    let userId: string;
+    if (state) {
+      try {
+        const payload = verifyAccessToken(state);
+        userId = payload.userId;
+      } catch {
+        res.status(401).send("Invalid or expired state token");
+        return;
+      }
+    } else {
+      res.status(401).send("Missing state token");
+      return;
+    }
+
+    await handleCallback(userId, provider, code);
     res.redirect(`${process.env.CORS_ORIGIN || "http://localhost:3000"}/profile`);
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Failed to connect account";

@@ -1,5 +1,6 @@
 import { Credential } from "../models/Credential";
 import { CredentialProvider } from "../interfaces/Credential";
+import { signAccessToken } from "../utils/jwt";
 
 interface ProviderConfig {
   clientId: string;
@@ -104,9 +105,10 @@ function assertConfigured(config: ProviderConfig): void {
   }
 }
 
-export function buildAuthUrl(provider: CredentialProvider): string {
+export function buildAuthUrl(provider: CredentialProvider, userId: string): string {
   const config = getConfig(provider);
   assertConfigured(config);
+  const state = signAccessToken(userId);
   const params = new URLSearchParams({
     client_id: config.clientId,
     redirect_uri: config.redirectUri,
@@ -114,6 +116,7 @@ export function buildAuthUrl(provider: CredentialProvider): string {
     scope: config.scope,
     access_type: "offline",
     prompt: "consent",
+    state,
   });
   return `${config.authorizeUrl}?${params.toString()}`;
 }

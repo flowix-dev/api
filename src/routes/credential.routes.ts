@@ -10,7 +10,7 @@ import {
 const router = Router();
 
 router.get("/:provider/auth", authenticate, getAuthUrl);
-router.get("/:provider/callback", authenticate, oauthCallback);
+router.get("/:provider/callback", oauthCallback);
 router.get("/:provider", authenticate, getStatus);
 router.delete("/:provider", authenticate, removeCredential);
 
