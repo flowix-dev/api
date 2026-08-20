@@ -28,6 +28,8 @@ RUN npm ci --omit=dev && npm cache clean --force
 
 COPY --from=builder /app/dist ./dist
 
+RUN node -e "const {pipeline}=require('@huggingface/transformers');pipeline('feature-extraction','Xenova/multilingual-e5-small').then(()=>console.log('Model downloaded'))"
+
 EXPOSE 8000
 
 CMD ["node", "dist/index.js"]
